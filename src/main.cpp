@@ -76,23 +76,33 @@ private:
         sf::String original = text.getString();
         sf::String wrapped;
         sf::String line;
-        sf::String newline = '\n';
 
         for (auto ch : original)
         {
-            text.setString(line);
-
-            if (text.getGlobalBounds().size.x >= bounds.x)
+            if (ch == '\n')
             {
-                wrapped += newline + line;
-
+                wrapped += line + '\n';
                 line.clear();
+                continue;
             }
-            line += ch;
+
+            line += ch; // сначала добавляем символ
+
+            text.setString(line);
+            if (text.getLocalBounds().size.x >= bounds.x)
+            {
+                // убираем последний символ, переносим его на новую строку
+                line.erase(line.getSize() - 1);
+                wrapped += line + '\n';
+                line.clear();
+                line += ch;
+            }
         }
 
-        text.setString(wrapped);
+        // добавляем последнюю строку
+        wrapped += line;
 
+        text.setString(wrapped);
     }
 
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override
@@ -340,7 +350,6 @@ public:
         : icon(paramsTexture), padding(fillPadding)
     {
         icon.setTextureRect(textureRect);
-
         sf::Vector2f iconSize = { static_cast<float>(textureRect.size.x),
                                    static_cast<float>(textureRect.size.y) };
         setSize(iconSize);
@@ -353,14 +362,30 @@ public:
     {
         position = pos;
         icon.setPosition(pos);
-        shape.setPosition({ pos.x, pos.y + size.y });
+        shape.setPosition({ pos.x, pos.y + size.y * scale.y });
     }
 
-    void setSize(const sf::Vector2f& size) noexcept
+    void setSize(const sf::Vector2f& sz) noexcept
     {
-        this->size = size;
-        shape.setSize(size - sf::Vector2f{ padding.x * 2, padding.y * 2 });
-        shape.setOrigin({ size.x / 2, size.y });
+        size = sz;
+        shape.setSize({ (size.x - padding.x * 2) * scale.x,
+                        (size.y - padding.y * 2) * scale.y });
+        shape.setOrigin({ size.x * scale.x / 2.f, size.y * scale.y });
+    }
+
+    void setScale(const sf::Vector2f& s) noexcept
+    {
+        scale = s;
+        icon.setScale(s);
+        shape.setPosition({ position.x, position.y + size.y * scale.y });
+        shape.setOrigin({ size.x * scale.x / 2.f, size.y * scale.y });
+    }
+
+    void setRotation(float degrees) noexcept
+    {
+        rotation = degrees;
+        icon.setRotation(sf::degrees(degrees));
+        shape.setRotation(sf::degrees(degrees));
     }
 
     void setValue(float value) noexcept
@@ -382,20 +407,14 @@ public:
             currentValue = newValue;
     }
 
-    void setRotation(float degrees) noexcept
-    {
-        shape.setRotation(sf::degrees(degrees));
-        icon.setRotation(sf::degrees(degrees));
-    }
 private:
-    sf::Sprite            icon;
+    sf::Sprite              icon;
     mutable sf::RectangleShape shape;
-
-    sf::Vector2f size = { 100, 100 };
-    sf::Vector2f position = { 0, 0 };
-    sf::Vector2f padding = { 0, 0 };
-
-  
+    sf::Vector2f            size = { 100.f, 100.f };
+    sf::Vector2f            position = { 0.f, 0.f };
+    sf::Vector2f            padding = { 0.f, 0.f };
+    sf::Vector2f            scale = { 1.f, 1.f };
+    float                   rotation = 0.f;
 
     float currentValue = 0.f;
     float oldValue = 0.f;
@@ -405,14 +424,16 @@ private:
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override
     {
         const sf::Color color = shape.getFillColor();
-        shape.setSize(icon.getGlobalBounds().size);
 
         auto drawSized = [&](float heightMult, sf::Color c)
             {
                 shape.setFillColor(c);
-                sf::Vector2f s = { size.x, (size.y - padding.y * 2) * heightMult };
+                sf::Vector2f s = {
+                    (size.x - padding.x * 2) * scale.x,
+                    (size.y - padding.y * 2) * scale.y * heightMult
+                };
                 shape.setSize(s);
-                shape.setOrigin({ 0.f, s.y + padding.y });
+                shape.setOrigin({ 0.f, s.y + padding.y * scale.y });
                 target.draw(shape, states);
             };
 
@@ -424,8 +445,7 @@ private:
         else
         {
             sf::Color trns = color;
-            trns.a = 0.5f;
-
+            trns.a = 128;
             drawSized(currentValue, trns);
             drawSized(oldValue, color);
         }
@@ -433,7 +453,6 @@ private:
         target.draw(icon, states);
     }
 };
-
 
 class Damper : public sf::Drawable
 {
@@ -572,7 +591,7 @@ int main()
 
     Card card(cardTex, cardFont, sf::IntRect({ 0, 0 }, { 450, 620 }));
     card.setScale({ 1.0f, 1.0f });
-    card.setDescription(L"Индустриализация! Строим заводыыыыы и делаем трактораааааа, нужно больше зерна от крестьяяяяяяян");
+    card.setDescription(L"!");
 
     float moral = 1.f;
     sf::Clock clock;
