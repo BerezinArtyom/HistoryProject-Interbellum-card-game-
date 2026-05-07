@@ -4,6 +4,7 @@
 #include <fstream>
 #include <algorithm>
 #include <nlohmann/json.hpp>
+#include <windows.h>
 
 template<typename T>
 [[nodiscard]] constexpr sf::Vector2<T> lerp(
@@ -86,11 +87,12 @@ private:
                 continue;
             }
 
-            line += ch;
+            line += ch; // сначала добавляем символ
 
             text.setString(line);
             if (text.getLocalBounds().size.x >= bounds.x)
             {
+                // убираем последний символ, переносим его на новую строку
                 line.erase(line.getSize() - 1);
                 wrapped += line + '\n';
                 line.clear();
@@ -98,6 +100,7 @@ private:
             }
         }
 
+        // добавляем последнюю строку
         wrapped += line;
 
         text.setString(wrapped);
@@ -128,7 +131,7 @@ public:
 
         descMargin = bounds.x * 0.1f;
         description.setBounds({ bounds.x - 2*descMargin, bounds.y / 2.f });
-
+        setScale({ 1.0f, 1.0f });
 
     }
 
@@ -331,8 +334,8 @@ struct CountryStates
 
 struct GameState
 {
-    float    doomsdayClockProgress = 0.f;
-    uint16_t interbellumDay = 0;
+    float doomsdayClockProgress = 0.f;
+    //uint16_t interbellumDay = 0;
 
     CountryStates countries;
 };
@@ -348,6 +351,7 @@ public:
         : icon(paramsTexture), padding(fillPadding)
     {
         icon.setTextureRect(textureRect);
+
         sf::Vector2f iconSize = { static_cast<float>(textureRect.size.x),
                                    static_cast<float>(textureRect.size.y) };
         setSize(iconSize);
@@ -360,22 +364,14 @@ public:
     {
         position = pos;
         icon.setPosition(pos);
+        shape.setPosition({ pos.x, pos.y + size.y });
     }
 
-    void setSize(const sf::Vector2f& sz) noexcept
+    void setSize(const sf::Vector2f& size) noexcept
     {
-        size = sz;
-    }
-
-    void setScale(const sf::Vector2f& s) noexcept
-    {
-        scale = s;
-        icon.setScale(s);
-    }
-
-    void setRotation(float degrees) noexcept
-    {
-        rotation = degrees;
+        this->size = size;
+        shape.setSize(size - sf::Vector2f{ padding.x * 2, padding.y * 2 });
+        shape.setOrigin({ size.x / 2, size.y });
     }
 
     void setValue(float value) noexcept
@@ -397,14 +393,20 @@ public:
             currentValue = newValue;
     }
 
+    void setRotation(float degrees) noexcept
+    {
+        shape.setRotation(sf::degrees(degrees));
+        icon.setRotation(sf::degrees(degrees));
+    }
 private:
-    sf::Sprite              icon;
+    sf::Sprite            icon;
     mutable sf::RectangleShape shape;
-    sf::Vector2f            size = { 100.f, 100.f };
-    sf::Vector2f            position = { 0.f, 0.f };
-    sf::Vector2f            padding = { 0.f, 0.f };
-    sf::Vector2f            scale = { 1.f, 1.f };
-    float                   rotation = 0.f;
+
+    sf::Vector2f size = { 100, 100 };
+    sf::Vector2f position = { 0, 0 };
+    sf::Vector2f padding = { 0, 0 };
+
+  
 
     float currentValue = 0.f;
     float oldValue = 0.f;
@@ -414,35 +416,15 @@ private:
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override
     {
         const sf::Color color = shape.getFillColor();
-
-        // Поворот вокруг центра иконки
-        sf::Transform transform;
-        sf::Vector2f center = {
-            position.x + size.x * scale.x / 2.f,
-            position.y + size.y * scale.y / 2.f
-        };
-        transform.translate(center);
-        transform.rotate(sf::degrees(rotation));
-        transform.translate(-center);
-
-        sf::RenderStates rotatedStates = states;
-        rotatedStates.transform *= transform;
+        shape.setSize(icon.getGlobalBounds().size);
 
         auto drawSized = [&](float heightMult, sf::Color c)
             {
                 shape.setFillColor(c);
-                sf::Vector2f s = {
-                    (size.x - padding.x * 2) * scale.x,
-                    (size.y - padding.y * 2) * scale.y * heightMult
-                };
+                sf::Vector2f s = { size.x, (size.y - padding.y * 2) * heightMult };
                 shape.setSize(s);
-                shape.setOrigin({ 0.f, s.y });
-                shape.setPosition({
-                    position.x + padding.x * scale.x,
-                    position.y + size.y * scale.y - padding.y * scale.y
-                    });
-                shape.setRotation(sf::degrees(0));
-                target.draw(shape, rotatedStates);
+                shape.setOrigin({ 0, s.y + padding.y });
+                target.draw(shape, states);
             };
 
         if (oldValue > currentValue)
@@ -453,14 +435,16 @@ private:
         else
         {
             sf::Color trns = color;
-            trns.a = 128;
+            trns.a = 0.5f;
+
             drawSized(currentValue, trns);
             drawSized(oldValue, color);
         }
 
-        target.draw(icon, rotatedStates);
+        target.draw(icon, states);
     }
 };
+
 
 class Damper : public sf::Drawable
 {
@@ -544,24 +528,27 @@ public:
     }
     void loadResources(const std::filesystem::path resourcesPath)
     {
-
+        int e = 0;
+        e++;
     }
 };
 int main()
 {
+    ShowWindow(GetConsoleWindow(), SW_HIDE);
     std::filesystem::current_path("..");
     const sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
-
-    const float    wScale = 2.f;
-    const uint32_t windowWidth = static_cast<uint32_t>(1600 * wScale);
-    const uint32_t windowHeight = static_cast<uint32_t>(900 * wScale);
-
-    sf::RenderWindow window(sf::VideoMode({ windowWidth, windowHeight }),
+    std::vector<sf::Drawable*> objects;
+    int windowWidth = 1600;
+    int windowHeight = 800;
+    // Создание окна в полноэкранном режиме
+    sf::RenderWindow window(sf::VideoMode({ (unsigned int)windowWidth, (unsigned int)windowHeight }),
         "Interbellum the game",
-        sf::Style::Titlebar | sf::Style::Close);
+        sf::Style::Titlebar | sf::Style::Close, sf::State::Fullscreen);
+    windowWidth = window.getSize().x;
+    windowHeight = window.getSize().y;
     window.setFramerateLimit(60);
 
-    sf::Font    cardFont;
+    sf::Font cardFont;
     sf::Texture backgroundTex, cardTex, paramsTex, damperTex, britainTex;
     try
     {
@@ -582,34 +569,47 @@ int main()
     }
 
     Damper damper(damperTex, windowWidth, windowHeight, windowHeight * 4.f, 0.3f);
+    //objects.push_back(&damper);
 
     sf::RectangleShape background({ static_cast<float>(windowWidth),
                                     static_cast<float>(windowHeight) });
     backgroundTex.setRepeated(true);
     background.setTexture(&backgroundTex);
-
+    objects.push_back(&background);
     
+
     VisualParameter moralParam(paramsTex,
-        sf::Vector2f{ windowWidth / 2.f, windowHeight / 2.f },
+        sf::Vector2f{ (float)((windowWidth / 2.f) - 130), (float)(windowHeight - 120) },
         sf::IntRect({ 0, 0 }, { 110, 110 }),
         sf::Color::Green,
         { 5.f, 5.f });
-    
     moralParam.setValue(0.8f);
+    objects.push_back(&moralParam);
 
-    Card card(cardTex, cardFont, sf::IntRect({ 0, 0 }, { 450, 620 }));
-    card.setScale({ 1.0f, 1.0f });
-    card.setDescription(L"!");
+    VisualParameter influenceParam(paramsTex,
+        sf::Vector2f{ (float)((windowWidth / 2.f) + 130), (float)(windowHeight - 120) },
+        sf::IntRect({ 220, 0 }, { 110, 110 }),
+        sf::Color::Blue,
+        { 5.f, 5.f });
+    influenceParam.setValue(0.8f);
+    objects.push_back(&influenceParam);
 
-    float moral = 1.f;
-    sf::Clock clock;
+    VisualParameter moneyParam(paramsTex,
+        sf::Vector2f{ (float)(windowWidth / 2.f), (float)(windowHeight - 120) },
+        sf::IntRect({ 110, 0 }, { 110, 110 }),
+        sf::Color::Yellow,
+        { 5.f, 5.f });
+
+    objects.push_back(&moneyParam);
+    moneyParam.setValue(0.8f);
+
 
 
     VisualParameter yellowChance(britainTex, { 800,800 }, sf::IntRect{ {0,0}, {80,218} }, sf::Color::Blue, { 0,0 });
     yellowChance.setValue(0.33f);
 
     yellowChance.setRotation(45);
-
+   // objects.push_back(&yellowChance);
 
     
     try
@@ -621,6 +621,7 @@ int main()
         std::cout << cards.dump() << "\n";
 
         std::cout << cards["common_cards"][0]["effects"]["moral"] << std::endl;
+
     }
     catch (const nlohmann::json::exception& ex)
     {
@@ -628,7 +629,23 @@ int main()
         return -1;
     }
 
+    std::vector<Card> cards;
+    for (int i = 0; i < 10; i++)
+    {
+        cards.push_back(Card(cardTex, cardFont, sf::IntRect({ 0, 0 }, { 450, 620 })));
+        cards.back().setDescription(L"qqqqqqqqввввввввввввввввввввввввввввввввввввввввввввввввввввввввв");
+    }
 
+ //   cards.back().setDescription(L"Индустриализация! Строим заводыыыыы и делаем трактораааааа, нужно больше зерна от крестьяяяяяяян");
+    //  card.setDescription(L"Индустриализация! Строим заводыыыыы и делаем трактораааааа, нужно больше зерна от крестьяяяяяяян");
+    Card* current;
+    int currentCard = cards.size() - 1;
+    current = &cards.back();
+    objects.push_back(current);
+    float moral = 1.f;
+    sf::Clock clock;
+
+    current->moveTo({ (float)(windowWidth / 2), (float)(windowHeight / 2) });
     while (window.isOpen())
     {
         float deltaTime = clock.restart().asSeconds();
@@ -647,34 +664,77 @@ int main()
 
                 if (mouseEvent->button == sf::Mouse::Button::Left)
                 {
-                    card.swap();
-                    moral -= 0.15f;
-                    moralParam.setValue(moral);
+                    if (mouseEvent->position.x > windowWidth / 2)
+                    {
+                        current->moveTo({ (float)2000, (float)(windowHeight) });
+                        currentCard--;
 
-                    yellowChance.setValue(0.66f);
+                        current = &cards[currentCard];
+                        current->moveTo({ (float)(windowWidth / 2), (float)(windowHeight / 2) });
+                        objects.back() = current;
+                    }
+                    else
+                    {
+                        current->moveTo({ (float)-2000, (float)(windowHeight) });
+                        currentCard--;
+
+                        current = &cards[currentCard];
+                        current->moveTo({ (float)(windowWidth / 2), (float)(windowHeight / 2) });
+                        objects.back() = current;
+                    }
                 }
                 else if (mouseEvent->button == sf::Mouse::Button::Right)
                 {
-                    card.moveTo(static_cast<sf::Vector2f>(mousePos));
+                    current->swap();
+                    moral -= 0.15f;
+                    influenceParam.setValue(moral);
+
+                    yellowChance.setValue(0.66f);
+
+                   // current->moveTo(static_cast<sf::Vector2f>(mousePos));
                     yellowChance.setValue(0.33f);
                 }
+            }
+            if (auto* mouseEvent = event.getIf<sf::Event::MouseMoved>())
+            {
+                if (mouseEvent->position.x > windowWidth / 2)
+                    current->setRotation(10.f);
+                else
+                    current->setRotation(-10.f);
             }
             else if (auto* keyEvent = event.getIf<sf::Event::KeyReleased>())
             {
                 if (keyEvent->code == sf::Keyboard::Key::Space) damper.swap();
-                else if (keyEvent->code == sf::Keyboard::Key::E)     card.setRotation(10.f);
-                else if (keyEvent->code == sf::Keyboard::Key::Q)     card.setRotation(-10.f);
+              //  else if (keyEvent->code == sf::Keyboard::Key::E) current->setRotation(10.f);
+              //  else if (keyEvent->code == sf::Keyboard::Key::Q) current->setRotation(-10.f);
+                else if (keyEvent->code == sf::Keyboard::Key::Escape) window.close();
             }
         }
-
-        card.update(deltaTime, 4.f);
+        for (Card& c : cards)
+            c.update(deltaTime, 4.f);
+       // current->update(deltaTime, 4.f);
         damper.update(deltaTime);
         moralParam.update(deltaTime);
+        influenceParam.update(deltaTime);
+        moneyParam.update(deltaTime);
 
         yellowChance.update(deltaTime);
 
         window.clear();
 
+        for (sf::Drawable* dr : objects)
+            window.draw(*dr);
+        for (int i = 1; i <= 3; i++)
+        {
+            if (currentCard - i >= 0 && currentCard - i < cards.size())
+            {
+                cards[currentCard - i].moveTo({ (float)((windowWidth/2) - (i * 5)), (float)(40 - (i * 20)) });
+
+                window.draw(cards[currentCard - i]);
+            }
+        }
+        window.draw(damper);
+        /*
         window.draw(background);
         window.draw(moralParam);
 
@@ -682,6 +742,7 @@ int main()
 
         window.draw(card);
         window.draw(damper);
+        */
         window.display();
     }
 
