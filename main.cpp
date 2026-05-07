@@ -6,7 +6,18 @@
 #include <nlohmann/json.hpp>
 #include <windows.h>
 #include <random>
+sf::String systemToSfString(const std::string& str) {
+    if (str.empty()) return sf::String();
 
+    // Определяем размер необходимого буфера
+    int size_needed = MultiByteToWideChar(CP_ACP, 0, &str[0], (int)str.size(), NULL, 0);
+    std::wstring wstrTo(size_needed, 0);
+
+    // Конвертируем в WideChar (UTF-16)
+    MultiByteToWideChar(CP_ACP, 0, &str[0], (int)str.size(), &wstrTo[0], size_needed);
+
+    return sf::String(wstrTo);
+}
 template<typename T>
 [[nodiscard]] constexpr sf::Vector2<T> lerp(
     const sf::Vector2<T>& a, const sf::Vector2<T>& b, float t) noexcept
@@ -151,19 +162,19 @@ struct CardModifiers
 };
 struct CountryStates
 {
-    float    s_ideology = 1.f;
-    int      s_finance = 1;
-    float    s_moral = 0.f;
-    float    s_influence = 0.0f;
+    float    s_ideology = 0.25f;
+    int      s_finance = 0.15f;
+    float    s_moral = 0.75f;
+    float    s_influence = 0.20f;
 
-    int      g_finance = 0;
-    float    g_moral = 1.f;
-    float    g_influence = 0.0f;
+    int      g_finance = 0.35;
+    float    g_moral = 0.40f;
+    float    g_influence = 0.20f;
 
-    float    b_agentNet = 0.f;
-    float    b_redChance = 0.f;
-    float    b_yellowChance = 0.0f;
-    float    b_greenChance = 0.f;
+    float    b_agentNet = 0.25f;
+    float    b_redChance = 0.25f;
+    float    b_yellowChance = 0.25f;
+    float    b_greenChance = 0.25f;
 
 
     void applyOther(const CountryStates& other, const CardModifiers& modifiers = {})
@@ -890,7 +901,9 @@ int main()
         window.clear();
         for (sf::Drawable* dr : objects)
             window.draw(*dr);
-        std::string s = "Отклонить\nЭффекты хода:\nСоветский союз:";
+
+        movedescription.setPosition({ (float)(windowWidth / 2) - 880, (float)(windowHeight / 2) });
+        std::string s = "Отклонить\nЭффекты хода:\nСоветский союз:\n";
         s += "Идеология: " + std::to_string(current->deltastatesNoChoice.s_ideology) + "\n";
         s += "Ресурсы: " + std::to_string(current->deltastatesNoChoice.s_finance) + "\n";
         s += "Влияние: " + std::to_string(current->deltastatesNoChoice.s_influence) + "\n";
@@ -898,18 +911,29 @@ int main()
         s += "Ресурсы: " + std::to_string(current->deltastatesNoChoice.g_finance) + "\n";
         s += "Влияние: " + std::to_string(current->deltastatesNoChoice.g_influence) + "\n";
         s += "Боевой дух: " + std::to_string(current->deltastatesNoChoice.g_moral) + "\nБритания:\n";
-        s = "asd авпв 123";
-      //  s += "Советская идеология: " + std::to_string(current->deltastatesNoChoice.b_agentNet) + "\n";
-     //   s += "Советская идеология: " + std::to_string(current->deltastatesNoChoice.b_greenChance) + "\n";
-        
-        movedescription.setText(sf::String::fromUtf8(s.begin(), s.end()));
 
+        movedescription.setText(sf::String(systemToSfString(s)));
+
+        window.draw(movedescription);
+
+        movedescription.setPosition({ (float)(windowWidth / 2) + 700, (float)(windowHeight / 2) });
+        s = "Принять\nЭффекты хода:\nСоветский союз:\n";
+        s += "Идеология: " + std::to_string(current->deltastatesYesChoice.s_ideology) + "\n";
+        s += "Ресурсы: " + std::to_string(current->deltastatesYesChoice.s_finance) + "\n";
+        s += "Влияние: " + std::to_string(current->deltastatesYesChoice.s_influence) + "\n";
+        s += "Боевой дух: " + std::to_string(current->deltastatesYesChoice.s_moral) + "\nГермания:\n";
+        s += "Ресурсы: " + std::to_string(current->deltastatesYesChoice.g_finance) + "\n";
+        s += "Влияние: " + std::to_string(current->deltastatesYesChoice.g_influence) + "\n";
+        s += "Боевой дух: " + std::to_string(current->deltastatesYesChoice.g_moral) + "\nБритания:\n";
+
+        movedescription.setText(sf::String(systemToSfString(s)));
+
+        window.draw(movedescription);
         current->update(deltaTime, 4.f);
  
 
 
         window.draw(*current);
-        window.draw(movedescription);
         window.draw(damper);
         window.display();
     }
