@@ -633,11 +633,10 @@ int main()
     for (int i = 0; i < 10; i++)
     {
         cards.push_back(Card(cardTex, cardFont, sf::IntRect({ 0, 0 }, { 450, 620 })));
-        cards.back().setDescription(L"qqqqqqqqввввввввввввввввввввввввввввввввввввввввввввввввввввввввв");
+        cards.back().setDescription(L"Индустриализация!Строим заводыыыыы и делаем трактораааааа, нужно больше зерна от крестьяяяяяяян");
     }
 
  //   cards.back().setDescription(L"Индустриализация! Строим заводыыыыы и делаем трактораааааа, нужно больше зерна от крестьяяяяяяян");
-    //  card.setDescription(L"Индустриализация! Строим заводыыыыы и делаем трактораааааа, нужно больше зерна от крестьяяяяяяян");
     Card* current;
     int currentCard = cards.size() - 1;
     current = &cards.back();
