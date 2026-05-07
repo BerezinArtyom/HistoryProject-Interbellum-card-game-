@@ -233,16 +233,16 @@ public:
 
     float moveSpeed = 2.f;
     float rotationLerpSpeed = 8.f;
-
+    bool   opened = false;
 private:
     sf::Vector2f scale = { 1.f, 1.f };
     sf::Vector2f startPos;
     sf::Vector2f endPos;
 
-    bool   opened = false;
     double flipProgress = 1.0;
-    float  swapState = 1.f;
 
+
+    float  swapState = 1.f;
     float moveProgress = 1.f;
 
     float currentRotation = 0.f;
@@ -528,8 +528,7 @@ public:
     }
     void loadResources(const std::filesystem::path resourcesPath)
     {
-        int e = 0;
-        e++;
+
     }
 };
 int main()
@@ -549,12 +548,13 @@ int main()
     window.setFramerateLimit(60);
 
     sf::Font cardFont;
-    sf::Texture backgroundTex, cardTex, paramsTex, damperTex, britainTex;
+    sf::Texture backgroundTex, cardTex, paramsTex, uniqueParamsTex, damperTex, britainTex;
     try
     {
         backgroundTex.loadFromFile("resources\\background1.jpg");
         cardTex.loadFromFile("resources\\cards.png");
         paramsTex.loadFromFile("resources\\common_params.png");
+        uniqueParamsTex.loadFromFile("resources\\unique_params.png");
         damperTex.loadFromFile("resources\\damper.png");
 
 
@@ -577,6 +577,8 @@ int main()
     background.setTexture(&backgroundTex);
     objects.push_back(&background);
     
+
+
 
     VisualParameter moralParam(paramsTex,
         sf::Vector2f{ (float)((windowWidth / 2.f) - 130), (float)(windowHeight - 120) },
@@ -602,6 +604,26 @@ int main()
 
     objects.push_back(&moneyParam);
     moneyParam.setValue(0.8f);
+
+
+
+    VisualParameter ideologyWin(uniqueParamsTex,
+        sf::Vector2f{ (float)(windowWidth / 2.f) - 500, (float)(windowHeight - 238) },
+        sf::IntRect({ 0, 0 }, { 218, 218 }),
+        sf::Color::Red,
+        { 5.f, 5.f });
+
+    objects.push_back(&ideologyWin);
+    ideologyWin.setValue(1.f);
+    VisualParameter miliatarWin(uniqueParamsTex,
+        sf::Vector2f{ (float)(windowWidth / 2.f) - 500, (float)(windowHeight - 238) },
+        sf::IntRect({ 218, 0 }, { 218, 218 }),
+        sf::Color::Red,
+        { 5.f, 5.f });
+
+   // objects.push_back(&miliatarWin);
+    miliatarWin.setValue(1.f);
+
 
 
 
@@ -640,7 +662,7 @@ int main()
     Card* current;
     int currentCard = cards.size() - 1;
     current = &cards.back();
-    objects.push_back(current);
+  //  objects.push_back(current);
     float moral = 1.f;
     sf::Clock clock;
 
@@ -663,23 +685,24 @@ int main()
 
                 if (mouseEvent->button == sf::Mouse::Button::Left)
                 {
+                    if(current->opened)
                     if (mouseEvent->position.x > windowWidth / 2)
                     {
-                        current->moveTo({ (float)2000, (float)(windowHeight) });
+                        current->moveTo({ (float)3000, (float)(windowHeight/2) });
                         currentCard--;
 
                         current = &cards[currentCard];
                         current->moveTo({ (float)(windowWidth / 2), (float)(windowHeight / 2) });
-                        objects.back() = current;
+                       // objects.back() = current;
                     }
                     else
                     {
-                        current->moveTo({ (float)-2000, (float)(windowHeight) });
+                        current->moveTo({ (float)-3000, (float)(windowHeight / 2) });
                         currentCard--;
 
                         current = &cards[currentCard];
                         current->moveTo({ (float)(windowWidth / 2), (float)(windowHeight / 2) });
-                        objects.back() = current;
+                       // objects.back() = current;
                     }
                 }
                 else if (mouseEvent->button == sf::Mouse::Button::Right)
@@ -723,25 +746,17 @@ int main()
 
         for (sf::Drawable* dr : objects)
             window.draw(*dr);
-        for (int i = 1; i <= 3; i++)
+        for (int i = -1; i <= 3; i++)
         {
             if (currentCard - i >= 0 && currentCard - i < cards.size())
             {
+                if(i > 0)
                 cards[currentCard - i].moveTo({ (float)((windowWidth/2) - (i * 5)), (float)(40 - (i * 20)) });
 
                 window.draw(cards[currentCard - i]);
             }
         }
         window.draw(damper);
-        /*
-        window.draw(background);
-        window.draw(moralParam);
-
-        window.draw(yellowChance);
-
-        window.draw(card);
-        window.draw(damper);
-        */
         window.display();
     }
 
