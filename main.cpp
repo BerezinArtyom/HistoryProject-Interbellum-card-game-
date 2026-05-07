@@ -633,11 +633,10 @@ int main()
     for (int i = 0; i < 10; i++)
     {
         cards.push_back(Card(cardTex, cardFont, sf::IntRect({ 0, 0 }, { 450, 620 })));
-        cards.back().setDescription(L"qqqqqqqqввввввввввввввввввввввввввввввввввввввввввввввввввввввввв");
+        cards.back().setDescription(L"Индустриализация!Строим заводыыыыы и делаем трактораааааа, нужно больше зерна от крестьяяяяяяян");
     }
 
  //   cards.back().setDescription(L"Индустриализация! Строим заводыыыыы и делаем трактораааааа, нужно больше зерна от крестьяяяяяяян");
-    //  card.setDescription(L"Индустриализация! Строим заводыыыыы и делаем трактораааааа, нужно больше зерна от крестьяяяяяяян");
     Card* current;
     int currentCard = cards.size() - 1;
     current = &cards.back();
@@ -666,19 +665,21 @@ int main()
                 {
                     if (mouseEvent->position.x > windowWidth / 2)
                     {
-                        current->moveTo({ (float)5000, (float)(windowHeight) });
+                        current->moveTo({ (float)2000, (float)(windowHeight) });
                         currentCard--;
 
                         current = &cards[currentCard];
                         current->moveTo({ (float)(windowWidth / 2), (float)(windowHeight / 2) });
+                        objects.back() = current;
                     }
                     else
                     {
-                        current->moveTo({ (float)-5000, (float)(windowHeight) });
+                        current->moveTo({ (float)-2000, (float)(windowHeight) });
                         currentCard--;
 
                         current = &cards[currentCard];
                         current->moveTo({ (float)(windowWidth / 2), (float)(windowHeight / 2) });
+                        objects.back() = current;
                     }
                 }
                 else if (mouseEvent->button == sf::Mouse::Button::Right)
@@ -689,7 +690,7 @@ int main()
 
                     yellowChance.setValue(0.66f);
 
-                    current->moveTo(static_cast<sf::Vector2f>(mousePos));
+                   // current->moveTo(static_cast<sf::Vector2f>(mousePos));
                     yellowChance.setValue(0.33f);
                 }
             }
