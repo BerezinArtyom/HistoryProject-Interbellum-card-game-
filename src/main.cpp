@@ -405,6 +405,15 @@ public:
         shape.setRotation(sf::degrees(degrees));
         icon.setRotation(sf::degrees(degrees));
     }
+    void InsertValue(float f)
+    {
+        currentValue  = f;
+        oldValue = f;
+        newValue = f;
+    }
+    float currentValue = 0.f;
+    float oldValue = 0.f;
+    float newValue = 0.f;
 private:
     sf::Sprite            icon;
     mutable sf::RectangleShape shape;
@@ -415,9 +424,6 @@ private:
 
   
 
-    float currentValue = 0.f;
-    float oldValue = 0.f;
-    float newValue = 0.f;
     float animSpeed = 2.f;
 
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override
@@ -508,10 +514,10 @@ public:
     }
 
     enum class AnimationState { Idle, In, Closed, Out } state = AnimationState::Idle;
-private:
-    sf::RectangleShape damper;
     uint8_t            currentPlayer = 0;
     const uint8_t      totalPlayers = 3;
+private:
+    sf::RectangleShape damper;
     const float        damperSpeed;
     const float        damperSeconds;
 
@@ -613,14 +619,14 @@ int main()
     influenceParam.setValue(0.8f);
     objects.push_back(&influenceParam);
 
-    VisualParameter moneyParam(paramsTex,
+    VisualParameter financeParam(paramsTex,
         sf::Vector2f{ (float)(windowWidth / 2.f), (float)(windowHeight - 120) },
         sf::IntRect({ 110, 0 }, { 110, 110 }),
         sf::Color::Yellow,
         { 5.f, 5.f });
 
-    objects.push_back(&moneyParam);
-    moneyParam.setValue(0.8f);
+    objects.push_back(&financeParam);
+    financeParam.setValue(0.8f);
 
 
 
@@ -711,6 +717,7 @@ int main()
                     if (mouseEvent->position.x > windowWidth / 2)
                     {
                         current->moveTo({ (float)3000, (float)(windowHeight/2) });
+                        current->swap();
                         gameState.countries.applyOther(current->deltastatesYesChoice, currentIvent);
                         cardSwiped = 1;
                         damper.swap();
@@ -718,6 +725,7 @@ int main()
                     else
                     {
                         current->moveTo({ (float)-3000, (float)(windowHeight / 2) });
+                        current->swap();
                         gameState.countries.applyOther(current->deltastatesNoChoice, currentIvent);
                         cardSwiped = 1;
                         damper.swap();
@@ -751,17 +759,27 @@ int main()
             {
                 cardSwiped = 0;
                 current->teleport({ 0, 0 });
-                current->opened = 0;
-                current->flipProgress = 0;
                 current = &cards[(int)Random(0, cards.size())];
                 current->moveTo({ (float)(windowWidth / 2), (float)(windowHeight / 2) });
+                if (damper.currentPlayer == 0)
+                {
+                    moralParam.InsertValue(gameState.countries.s_moral);
+                    financeParam.InsertValue(gameState.countries.s_finance);
+                    moralParam.InsertValue(gameState.countries.s_moral);
+                    moralParam.InsertValue(gameState.countries.s_moral);
+                }
+
+
+
+
+
             }
         }
        // current->update(deltaTime, 4.f);
         damper.update(deltaTime);
         moralParam.update(deltaTime);
         influenceParam.update(deltaTime);
-        moneyParam.update(deltaTime);
+        financeParam.update(deltaTime);
 
         yellowChance.update(deltaTime);
 
