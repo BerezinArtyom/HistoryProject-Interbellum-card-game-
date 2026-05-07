@@ -1,0 +1,36 @@
+{
+  "common_cards": [
+    {
+      "description": "",
+      "image": "",
+      "doomsdayWatch": 0.0,
+      "country": ["soviet", "germany"],
+      "effects": {
+        "moral": 25,
+        "finance": -90,
+        "influence": 0
+      }
+    }
+  ],
+  "soviet_unique": [
+    {
+      "description": "",
+      "doomsdayWatch": 0.5,
+      "effects": {
+        "moral": 25,
+        "finance": -90,
+        "influence": 0,
+        "ideology": 125
+      }
+    }
+  ],
+  "britain_common": [
+    {
+      "description": ""
+    }
+  ],
+  "germany_unique": [],
+  "yellow_cards": [],
+  "green_cards": [],
+  "red_cards": []
+}
