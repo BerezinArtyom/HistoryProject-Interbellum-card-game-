@@ -111,6 +111,40 @@ private:
         target.draw(text, states);
     }
 };
+struct CardModifiers
+{
+    float    s_ideology = 1.f;
+    float    s_finance = 1.f;
+    float    s_moral = 1.f;
+    float    s_influence = 1.f;
+
+    float    g_finance = 1.f;
+    float    g_moral = 1.f;
+    float    g_influence = 1.f;
+
+    float    b_agentNet = 1.f;
+    float    b_redChance = 1.f;
+    float    b_yellowChance = 1.f;
+    float    b_greenChance = 1.f;
+
+    void operator+(const CardModifiers& other) noexcept
+    {
+        s_ideology += other.s_ideology;
+        s_finance += other.s_finance;
+        s_moral += other.s_moral;
+        s_influence += other.s_influence;
+
+        g_finance += other.g_finance;
+        g_moral += other.g_moral;
+        g_influence += other.g_influence;
+
+        b_agentNet += other.b_agentNet;
+        b_redChance += other.b_redChance;
+        b_yellowChance += other.b_yellowChance;
+        b_greenChance += other.b_greenChance;
+    }
+
+};
 
 class Card : public sf::Drawable
 {
@@ -234,6 +268,8 @@ public:
     float moveSpeed = 2.f;
     float rotationLerpSpeed = 8.f;
     bool   opened = false;
+    CountryStates deltastatesYesChoice;
+    CountryStates deltastatesNoChoice;
 private:
     sf::Vector2f scale = { 1.f, 1.f };
     sf::Vector2f startPos;
@@ -263,40 +299,6 @@ private:
 };
 
 
-struct CardModifiers
-{
-    float    s_ideology = 1.f;
-    float    s_finance = 1.f;
-    float    s_moral = 1.f;
-    float    s_influence = 1.f;
-
-    float    g_finance = 1.f;
-    float    g_moral = 1.f;
-    float    g_influence = 1.f;
-
-    float    b_agentNet = 1.f;
-    float    b_redChance = 1.f;
-    float    b_yellowChance = 1.f;
-    float    b_greenChance = 1.f;
-
-    void operator+(const CardModifiers& other) noexcept
-    {
-        s_ideology += other.s_ideology;
-        s_finance += other.s_finance;
-        s_moral += other.s_moral;
-        s_influence += other.s_influence;
-
-        g_finance += other.g_finance;
-        g_moral += other.g_moral;
-        g_influence += other.g_influence;
-
-        b_agentNet += other.b_agentNet;
-        b_redChance += other.b_redChance;
-        b_yellowChance += other.b_yellowChance;
-        b_greenChance += other.b_greenChance;
-    }
-
-};
 struct CountryStates
 {
     float    s_ideology = 0.f;
@@ -632,7 +634,7 @@ int main()
 
     yellowChance.setRotation(45);
    // objects.push_back(&yellowChance);
-
+    GameState gameState;
     
     try
     {
@@ -659,6 +661,7 @@ int main()
     }
 
  //   cards.back().setDescription(L"Индустриализация! Строим заводыыыыы и делаем трактораааааа, нужно больше зерна от крестьяяяяяяян");
+    CardModifiers currentIvent;
     Card* current;
     int currentCard = cards.size() - 1;
     current = &cards.back();
@@ -690,19 +693,18 @@ int main()
                     {
                         current->moveTo({ (float)3000, (float)(windowHeight/2) });
                         currentCard--;
-
                         current = &cards[currentCard];
                         current->moveTo({ (float)(windowWidth / 2), (float)(windowHeight / 2) });
-                       // objects.back() = current;
+                        gameState.countries.applyOther(current->deltastatesYesChoice, currentIvent);
                     }
                     else
                     {
                         current->moveTo({ (float)-3000, (float)(windowHeight / 2) });
                         currentCard--;
-
                         current = &cards[currentCard];
                         current->moveTo({ (float)(windowWidth / 2), (float)(windowHeight / 2) });
-                       // objects.back() = current;
+                        gameState.countries.applyOther(current->deltastatesNoChoice, currentIvent);
+
                     }
                 }
                 else if (mouseEvent->button == sf::Mouse::Button::Right)
