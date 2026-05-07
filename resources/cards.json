@@ -1,36 +1,103 @@
 {
   "common_cards": [
     {
-      "description": "",
-      "image": "",
-      "doomsdayWatch": 0.0,
-      "country": ["soviet", "germany"],
-      "effects": {
-        "moral": 25,
-        "finance": -90,
-        "influence": 0
+      "description": "Срочное строительство заводов-дублёров за Уралом. Это требует колоссальных вложений, но обеспечит тыл.",
+      "type": 1,
+      "countries": ["soviet"],
+      "effectsYes": {
+	"s_ideology": 25,
+        "s_finance": -90,
+        "s_moral": 25,
+        "s_influence": 0,
+        "g_finance": 0,
+        "g_moral": 0,
+        "g_influence": 0,
+        "b_agentNet": 0,
+        "b_redChance": 0,
+        "b_yellowChance": 0,
+        "b_greenChance": 0,
+        "doomsdayWatch": 0.0
+      },
+      "effectsNo": {
+        "s_ideology": 0,
+        "s_finance": -90,
+        "s_moral": 25,
+        "s_influence": 0,
+        "g_finance": 0,
+        "g_moral": 0,
+        "g_influence": 0,
+        "b_agentNet": 0,
+        "b_redChance": 0,
+        "b_yellowChance": 0,
+        "b_greenChance": 0,
+        "doomsdayWatch": 0.0
+      }
+    },
+    {
+      "description": "Ввод войск в Рейнскую демилитаризованную зону. Прямое нарушение Версальского договора. Рискнем?",
+      "type": 2,
+      "countries": ["germany"],
+      "effectsYes": {
+	"s_ideology": 0,
+        "s_finance": -90,
+        "s_moral": 25,
+        "s_influence": 0,
+        "g_finance": 0,
+        "g_moral": 0,
+        "g_influence": 0,
+        "b_agentNet": 0,
+        "b_redChance": 0,
+        "b_yellowChance": 0,
+        "b_greenChance": 0,
+        "doomsdayWatch": 0.0
+      },
+      "effectsNo": {
+        "s_ideology": 0,
+        "s_finance": -90,
+        "s_moral": 25,
+        "s_influence": 0,
+        "g_finance": 0,
+        "g_moral": 0,
+        "g_influence": 0,
+        "b_agentNet": 0,
+        "b_redChance": 0,
+        "b_yellowChance": 0,
+        "b_greenChance": 0,
+        "doomsdayWatch": 0.0
+      }
+    },
+    {
+      "description": "Предложить Германии пакт о ненападении, намекнув на 'свободу рук' на Востоке против большевиков.",
+      "type": 3,
+      "countries": ["britain"],
+      "effectsYes": {
+	"s_ideology": 0,
+        "s_finance": -90,
+        "s_moral": 25,
+        "s_influence": 0,
+        "g_finance": 0,
+        "g_moral": 0,
+        "g_influence": 0,
+        "b_agentNet": 0,
+        "b_redChance": 0,
+        "b_yellowChance": 0,
+        "b_greenChance": 0,
+        "doomsdayWatch": 0.0
+      },
+      "effectsNo": {
+        "s_ideology": 0,
+        "s_finance": -90,
+        "s_moral": 25,
+        "s_influence": 0,
+        "g_finance": 0,
+        "g_moral": 0,
+        "g_influence": 0,
+        "b_agentNet": 0,
+        "b_redChance": 0,
+        "b_yellowChance": 0,
+        "b_greenChance": 0,
+        "doomsdayWatch": 0.0
       }
     }
-  ],
-  "soviet_unique": [
-    {
-      "description": "",
-      "doomsdayWatch": 0.5,
-      "effects": {
-        "moral": 25,
-        "finance": -90,
-        "influence": 0,
-        "ideology": 125
-      }
-    }
-  ],
-  "britain_common": [
-    {
-      "description": ""
-    }
-  ],
-  "germany_unique": [],
-  "yellow_cards": [],
-  "green_cards": [],
-  "red_cards": []
+  ]
 }
