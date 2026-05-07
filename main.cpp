@@ -414,6 +414,7 @@ public:
     float currentValue = 0.f;
     float oldValue = 0.f;
     float newValue = 0.f;
+    bool shown = 1;
 private:
     sf::Sprite            icon;
     mutable sf::RectangleShape shape;
@@ -428,6 +429,8 @@ private:
 
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override
     {
+        if (!shown)
+            return;
         const sf::Color color = shape.getFillColor();
         shape.setSize(icon.getGlobalBounds().size);
 
@@ -636,7 +639,7 @@ int main()
         sf::Color::Red,
         { 5.f, 5.f });
 
-  //  objects.push_back(&ideologyWin);
+    objects.push_back(&ideologyWin);
     ideologyWin.setValue(1.f);
     VisualParameter miliatarWin(uniqueParamsTex,
         sf::Vector2f{ (float)(windowWidth / 2.f) - 500, (float)(windowHeight - 238) },
@@ -644,7 +647,7 @@ int main()
         sf::Color::Red,
         { 5.f, 5.f });
 
-   // objects.push_back(&miliatarWin);
+    objects.push_back(&miliatarWin);
     miliatarWin.setValue(1.f);
 
 
@@ -656,8 +659,8 @@ int main()
     yellowChance.setValue(0.33f);
 
 
-    yellowChance.setRotation(45);
-   // objects.push_back(&yellowChance);
+   // yellowChance.setRotation(45);
+    objects.push_back(&yellowChance);
     GameState gameState;
     
     try
@@ -696,6 +699,17 @@ int main()
 
     current->moveTo({ (float)(windowWidth / 2), (float)(windowHeight / 2) });
     bool cardSwiped = 0;
+    {
+        moralParam.shown = 1;
+        financeParam.shown = 1;
+        influenceParam.shown = 1;
+        moralParam.InsertValue(gameState.countries.s_moral);
+        financeParam.InsertValue(gameState.countries.s_finance);
+        influenceParam.InsertValue(gameState.countries.s_influence);
+        ideologyWin.shown = 1;
+        miliatarWin.shown = 0;
+        yellowChance.shown = 0;
+    }
     while (window.isOpen())
     {
         float deltaTime = clock.restart().asSeconds();
@@ -763,10 +777,36 @@ int main()
                 current->moveTo({ (float)(windowWidth / 2), (float)(windowHeight / 2) });
                 if (damper.currentPlayer == 0)
                 {
+                    moralParam.shown = 1;
+                    financeParam.shown = 1;
+                    influenceParam.shown = 1;
                     moralParam.InsertValue(gameState.countries.s_moral);
                     financeParam.InsertValue(gameState.countries.s_finance);
-                    moralParam.InsertValue(gameState.countries.s_moral);
-                    moralParam.InsertValue(gameState.countries.s_moral);
+                    influenceParam.InsertValue(gameState.countries.s_influence);
+                    ideologyWin.shown = 1;
+                    miliatarWin.shown = 0;
+                    yellowChance.shown = 0;
+                }
+                if (damper.currentPlayer == 1)
+                {
+                    moralParam.shown = 1;
+                    financeParam.shown = 1;
+                    influenceParam.shown = 1;
+                    moralParam.InsertValue(gameState.countries.g_moral);
+                    financeParam.InsertValue(gameState.countries.g_finance);
+                    influenceParam.InsertValue(gameState.countries.g_influence);
+                    ideologyWin.shown = 0;
+                    miliatarWin.shown = 1;
+                    yellowChance.shown = 0;
+                }
+                if (damper.currentPlayer == 2)
+                {
+                    moralParam.shown = 0;
+                    financeParam.shown = 0;
+                    influenceParam.shown = 0;
+                    ideologyWin.shown = 0;
+                    miliatarWin.shown = 0;
+                    yellowChance.shown = 1;
                 }
 
 
