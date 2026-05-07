@@ -151,19 +151,19 @@ struct CardModifiers
 };
 struct CountryStates
 {
-    float    s_ideology = 0.f;
-    int      s_finance = 0;
-    float    s_moral = 1.f;
-    float    s_influence = 0.5f;
+    float    s_ideology = 1.f;
+    int      s_finance = 1;
+    float    s_moral = 0.f;
+    float    s_influence = 0.0f;
 
     int      g_finance = 0;
     float    g_moral = 1.f;
-    float    g_influence = 0.5f;
+    float    g_influence = 0.0f;
 
     float    b_agentNet = 0.f;
-    float    b_redChance = 33.3f;
-    float    b_yellowChance = 33.3f;
-    float    b_greenChance = 33.3f;
+    float    b_redChance = 0.f;
+    float    b_yellowChance = 0.0f;
+    float    b_greenChance = 0.f;
 
 
     void applyOther(const CountryStates& other, const CardModifiers& modifiers = {})
@@ -556,6 +556,7 @@ inline float Random(float min, float max)
 //enum class Country { SovietUnion, Germany, Britain};
 int main()
 {
+    setlocale(1,"ru");
     ShowWindow(GetConsoleWindow(), SW_HIDE);
     std::filesystem::current_path("..");
     const sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
@@ -655,23 +656,75 @@ int main()
 
 
 
-    VisualParameter yellowChance(britainTex, { 800,800 }, sf::IntRect{ {0,0}, {80,218} }, sf::Color::Blue, { 0,0 });
+    VisualParameter yellowChance(britainTex, { (float)(windowWidth / 2) - 500,(float)(windowHeight - 270) }, sf::IntRect{ {0,0}, {80,218} }, sf::Color::Blue, { 0,0 });
     yellowChance.setValue(0.33f);
 
 
    // yellowChance.setRotation(45);
     objects.push_back(&yellowChance);
     GameState gameState;
-    
+
+    std::vector<Card> sovietcards;
+    std::vector<Card> germancards;
+    std::vector<Card> brittishcards;
     try
     {
         std::ifstream cardsJson;
         cardsJson.open("resources\\cards.json");
 
-        nlohmann::json cards = nlohmann::json::parse(cardsJson);
-        std::cout << cards.dump() << "\n";
+        nlohmann::json data = nlohmann::json::parse(cardsJson);
+        for (const auto& card : data["common_cards"])
+        {
+            int type = card["type"];
+            if(type == 1)
+                sovietcards.push_back(Card(cardTex, cardFont, sf::IntRect({ 0, 0 }, { 450, 620 })));
+            if(type == 2)
+                germancards.push_back(Card(cardTex, cardFont, sf::IntRect({ 0, 0 }, { 450, 620 })));
+            if(type == 3)
+                brittishcards.push_back(Card(cardTex, cardFont, sf::IntRect({ 0, 0 }, { 450, 620 })));
+            Card& cur = (type == 1 ? sovietcards.back() : (type == 2 ? germancards.back() : brittishcards.back()));
+            std::string s = card["description"].get<std::string>();
+            cur.setDescription(sf::String::fromUtf8(s.begin(), s.end()));
 
-        std::cout << cards["common_cards"][0]["effects"]["moral"] << std::endl;
+            cur.cardType = card["type"];
+
+            // Доступ к эффектам при выборе "Да" (свайп вправо)
+
+            cur.deltastatesYesChoice.s_moral =     (float)(card["effectsYes"]["s_moral"]) / 100.f;
+            cur.deltastatesYesChoice.s_ideology =  (float)(card["effectsYes"]["s_ideology"]) / 100.f;
+            cur.deltastatesYesChoice.s_influence = (float)(card["effectsYes"]["s_influence"]) / 100.f;
+            cur.deltastatesYesChoice.s_finance =   (float)(card["effectsYes"]["s_finance"]) / 100.f;
+            cur.deltastatesYesChoice.g_finance =   (float)(card["effectsYes"]["g_finance"]) / 100.f;
+            cur.deltastatesYesChoice.g_influence = (float)(card["effectsYes"]["g_influence"]) / 100.f;
+            cur.deltastatesYesChoice.g_moral =     (float)(card["effectsYes"]["g_moral"]) / 100.f;
+            cur.deltastatesYesChoice.b_agentNet =  (float)(card["effectsYes"]["g_moral"]) / 100.f;
+            cur.deltastatesYesChoice.b_greenChance = (float)(card["effectsYes"]["g_moral"]) / 100.f;
+            cur.deltastatesYesChoice.b_redChance = (float)(card["effectsYes"]["g_moral"]) / 100.f;
+            cur.deltastatesYesChoice.b_yellowChance = (float)(card["effectsYes"]["g_moral"]) / 100.f;
+                                                            
+            cur.deltastatesNoChoice.s_moral =      (float)(card["effectsNo"]["s_moral"]) / 100.f;
+            cur.deltastatesNoChoice.s_ideology =   (float)(card["effectsNo"]["s_ideology"]) / 100.f;
+            cur.deltastatesNoChoice.s_influence =  (float)(card["effectsNo"]["s_influence"]) / 100.f;
+            cur.deltastatesNoChoice.s_finance =    (float)(card["effectsNo"]["s_finance"]) / 100.f;
+            cur.deltastatesNoChoice.g_finance =    (float)(card["effectsNo"]["g_finance"]) / 100.f;
+            cur.deltastatesNoChoice.g_influence =  (float)(card["effectsNo"]["g_influence"]) / 100.f;
+            cur.deltastatesNoChoice.g_moral =      (float)(card["effectsNo"]["g_moral"]) / 100.f;
+            cur.deltastatesNoChoice.b_agentNet =   (float)(card["effectsNo"]["g_moral"]) / 100.f;
+            cur.deltastatesNoChoice.b_greenChance = (float)(card["effectsNo"]["g_moral"]) / 100.f;
+            cur.deltastatesNoChoice.b_redChance =  (float)(card["effectsNo"]["g_moral"]) / 100.f;
+            cur.deltastatesNoChoice.b_yellowChance = (float)(card["effectsNo"]["g_moral"])/100.f;
+
+
+
+           // float doomsdayYes = card["effectsYes"]["doomsdayWatch"];
+
+            // Доступ к эффектам при выборе "Нет" (свайп влево)
+           // int sovietMoralNo = card["effectsNo"]["s_moral"];
+
+        }
+      //  std::cout << cards.dump() << "\n";
+
+       // std::cout << cards["common_cards"][0]["effects"]["moral"] << std::endl;
 
     }
     catch (const nlohmann::json::exception& ex)
@@ -680,18 +733,17 @@ int main()
         return -1;
     }
 
-    std::vector<Card> cards;
 
-
+/*
     for (int i = 0; i < 10; i++)
     {
         cards.push_back(Card(cardTex, cardFont, sf::IntRect({ 0, 0 }, { 450, 620 })));
         cards.back().setDescription(L"Индустриализация!Строим заводыыыыы и делаем трактораааааа, нужно больше зерна от крестьяяяяяяян");
     }
-
+    */
  //   cards.back().setDescription(L"Индустриализация! Строим заводыыыыы и делаем трактораааааа, нужно больше зерна от крестьяяяяяяян");
     CardModifiers currentIvent;
-    Card* current = &cards[0];
+    Card* current = &sovietcards[0];
 
     float moral = 1.f;
     sf::Clock clock;
@@ -710,6 +762,13 @@ int main()
         miliatarWin.shown = 0;
         yellowChance.shown = 0;
     }
+    TextBox movedescription{ cardFont, 32 };
+    movedescription.setPosition({ (float)(windowWidth / 2) - 880, (float)(windowHeight / 2) });
+   
+    
+    ideologyWin.InsertValue(gameState.countries.s_ideology);
+    miliatarWin.InsertValue(gameState.doomsdayClockProgress);
+    yellowChance.InsertValue(gameState.countries.b_yellowChance);
     while (window.isOpen())
     {
         float deltaTime = clock.restart().asSeconds();
@@ -773,8 +832,6 @@ int main()
             {
                 cardSwiped = 0;
                 current->teleport({ 0, 0 });
-                current = &cards[(int)Random(0, cards.size())];
-                current->moveTo({ (float)(windowWidth / 2), (float)(windowHeight / 2) });
                 if (damper.currentPlayer == 0)
                 {
                     moralParam.shown = 1;
@@ -783,9 +840,11 @@ int main()
                     moralParam.InsertValue(gameState.countries.s_moral);
                     financeParam.InsertValue(gameState.countries.s_finance);
                     influenceParam.InsertValue(gameState.countries.s_influence);
+                    ideologyWin.InsertValue(gameState.countries.s_ideology);
                     ideologyWin.shown = 1;
                     miliatarWin.shown = 0;
                     yellowChance.shown = 0;
+                    current = &sovietcards[(int)Random(0, sovietcards.size())];
                 }
                 if (damper.currentPlayer == 1)
                 {
@@ -795,9 +854,11 @@ int main()
                     moralParam.InsertValue(gameState.countries.g_moral);
                     financeParam.InsertValue(gameState.countries.g_finance);
                     influenceParam.InsertValue(gameState.countries.g_influence);
+                    miliatarWin.InsertValue(gameState.doomsdayClockProgress);
                     ideologyWin.shown = 0;
                     miliatarWin.shown = 1;
                     yellowChance.shown = 0;
+                    current = &germancards[(int)Random(0, germancards.size())];
                 }
                 if (damper.currentPlayer == 2)
                 {
@@ -807,8 +868,11 @@ int main()
                     ideologyWin.shown = 0;
                     miliatarWin.shown = 0;
                     yellowChance.shown = 1;
+                    yellowChance.InsertValue(gameState.countries.b_yellowChance);
+                    current = &brittishcards[(int)Random(0, brittishcards.size())];
                 }
 
+                current->moveTo({ (float)(windowWidth / 2), (float)(windowHeight / 2) });
 
 
 
@@ -826,12 +890,26 @@ int main()
         window.clear();
         for (sf::Drawable* dr : objects)
             window.draw(*dr);
-
+        std::string s = "Отклонить\nЭффекты хода:\nСоветский союз:";
+        s += "Идеология: " + std::to_string(current->deltastatesNoChoice.s_ideology) + "\n";
+        s += "Ресурсы: " + std::to_string(current->deltastatesNoChoice.s_finance) + "\n";
+        s += "Влияние: " + std::to_string(current->deltastatesNoChoice.s_influence) + "\n";
+        s += "Боевой дух: " + std::to_string(current->deltastatesNoChoice.s_moral) + "\nГермания:\n";
+        s += "Ресурсы: " + std::to_string(current->deltastatesNoChoice.g_finance) + "\n";
+        s += "Влияние: " + std::to_string(current->deltastatesNoChoice.g_influence) + "\n";
+        s += "Боевой дух: " + std::to_string(current->deltastatesNoChoice.g_moral) + "\nБритания:\n";
+        s = "asd авпв 123";
+      //  s += "Советская идеология: " + std::to_string(current->deltastatesNoChoice.b_agentNet) + "\n";
+     //   s += "Советская идеология: " + std::to_string(current->deltastatesNoChoice.b_greenChance) + "\n";
+        
+        movedescription.setText(sf::String::fromUtf8(s.begin(), s.end()));
 
         current->update(deltaTime, 4.f);
  
 
+
         window.draw(*current);
+        window.draw(movedescription);
         window.draw(damper);
         window.display();
     }
