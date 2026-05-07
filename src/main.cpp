@@ -86,12 +86,11 @@ private:
                 continue;
             }
 
-            line += ch; // сначала добавляем символ
+            line += ch;
 
             text.setString(line);
             if (text.getLocalBounds().size.x >= bounds.x)
             {
-                // убираем последний символ, переносим его на новую строку
                 line.erase(line.getSize() - 1);
                 wrapped += line + '\n';
                 line.clear();
@@ -99,7 +98,6 @@ private:
             }
         }
 
-        // добавляем последнюю строку
         wrapped += line;
 
         text.setString(wrapped);
@@ -362,30 +360,22 @@ public:
     {
         position = pos;
         icon.setPosition(pos);
-        shape.setPosition({ pos.x, pos.y + size.y * scale.y });
     }
 
     void setSize(const sf::Vector2f& sz) noexcept
     {
         size = sz;
-        shape.setSize({ (size.x - padding.x * 2) * scale.x,
-                        (size.y - padding.y * 2) * scale.y });
-        shape.setOrigin({ size.x * scale.x / 2.f, size.y * scale.y });
     }
 
     void setScale(const sf::Vector2f& s) noexcept
     {
         scale = s;
         icon.setScale(s);
-        shape.setPosition({ position.x, position.y + size.y * scale.y });
-        shape.setOrigin({ size.x * scale.x / 2.f, size.y * scale.y });
     }
 
     void setRotation(float degrees) noexcept
     {
         rotation = degrees;
-        icon.setRotation(sf::degrees(degrees));
-        shape.setRotation(sf::degrees(degrees));
     }
 
     void setValue(float value) noexcept
@@ -425,6 +415,19 @@ private:
     {
         const sf::Color color = shape.getFillColor();
 
+        // Поворот вокруг центра иконки
+        sf::Transform transform;
+        sf::Vector2f center = {
+            position.x + size.x * scale.x / 2.f,
+            position.y + size.y * scale.y / 2.f
+        };
+        transform.translate(center);
+        transform.rotate(sf::degrees(rotation));
+        transform.translate(-center);
+
+        sf::RenderStates rotatedStates = states;
+        rotatedStates.transform *= transform;
+
         auto drawSized = [&](float heightMult, sf::Color c)
             {
                 shape.setFillColor(c);
@@ -433,8 +436,13 @@ private:
                     (size.y - padding.y * 2) * scale.y * heightMult
                 };
                 shape.setSize(s);
-                shape.setOrigin({ 0.f, s.y + padding.y * scale.y });
-                target.draw(shape, states);
+                shape.setOrigin({ 0.f, s.y });
+                shape.setPosition({
+                    position.x + padding.x * scale.x,
+                    position.y + size.y * scale.y - padding.y * scale.y
+                    });
+                shape.setRotation(sf::degrees(0));
+                target.draw(shape, rotatedStates);
             };
 
         if (oldValue > currentValue)
@@ -450,7 +458,7 @@ private:
             drawSized(oldValue, color);
         }
 
-        target.draw(icon, states);
+        target.draw(icon, rotatedStates);
     }
 };
 
