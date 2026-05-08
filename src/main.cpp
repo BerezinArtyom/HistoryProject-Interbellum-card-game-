@@ -252,7 +252,7 @@ public:
 
         uint8_t cardVariant = swapState >= 0.f ? 1 : 0;
         cardSprite.setTextureRect(
-            sf::IntRect({ cardTextureRect.size.x * cardVariant * cardType, 0 },
+            sf::IntRect({ cardTextureRect.size.x * (cardType), cardVariant * cardTextureRect.size.y },
                 { cardTextureRect.size.x, cardTextureRect.size.y }));
 
         if (moveProgress < 1.f)
@@ -741,7 +741,8 @@ int main()
             std::string s = card["description"].get<std::string>();
             cur.setDescription(sf::String::fromUtf8(s.begin(), s.end()));
 
-            cur.cardType = card["type"];
+            cur.cardType = ((card["type"] ) % 3);
+          //  cur.cardType = card["type"];
 
             // Доступ к эффектам при выборе "Да" (свайп вправо)
 
@@ -922,7 +923,7 @@ int main()
                     miliatarWin.InsertValue(gameState.countries.doomsdayClockProgress);
                     miliatarPower.InsertValue(gameState.countries.g_power);
                     ideologyWin.shown = 0;
-                    miliatarWin.shown = 1;
+                 //   miliatarWin.shown = 1;
                     yellowChance.shown = 0;
                     current = &germancards[(int)Random(0, germancards.size())];
                 }
