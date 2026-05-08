@@ -144,6 +144,8 @@ struct CardModifiers
     float    b_yellowChance = 1.f;
     float    b_greenChance = 1.f;
 
+    float    doomsdayClockProgress = 1.f;
+
     void operator+(const CardModifiers& other) noexcept
     {
         s_ideology += other.s_ideology;
@@ -180,6 +182,7 @@ struct CountryStates
     float    b_yellowChance = 0.25f;
     float    b_greenChance = 0.25f;
 
+    float doomsdayClockProgress = 0.f;
 
     void applyOther(const CountryStates& other, const CardModifiers& modifiers = {})
     {
@@ -198,6 +201,8 @@ struct CountryStates
         b_redChance += other.b_redChance * modifiers.b_redChance;
         b_yellowChance += other.b_yellowChance * modifiers.b_yellowChance;
         b_greenChance += other.b_greenChance * modifiers.b_greenChance;
+
+        doomsdayClockProgress += other.doomsdayClockProgress * modifiers.doomsdayClockProgress;
     }
 };
 class Card : public sf::Drawable
@@ -358,7 +363,6 @@ private:
 
 struct GameState
 {
-    float doomsdayClockProgress = 0.f;
     //uint16_t interbellumDay = 0;
 
     CountryStates countries;
@@ -590,8 +594,31 @@ int main()
 
     sf::Font cardFont;
     sf::Texture backgroundTex, cardTex, paramsTex, uniqueParamsTex, damperTex, britainTex;
+    std::vector<sf::Texture> doomClockTexs;
+    doomClockTexs.resize(12);
+    std::vector<sf::Sprite> doomClockStates;
+   // doomClockStates.resize(12);
     try
     {
+        for (int i = 0; i < 12; i++)
+        {
+            if (!doomClockTexs[i].loadFromFile("resources\\clock" + std::to_string(i + 1) + ".png"))
+            {
+                return -1;
+            }
+            doomClockStates.emplace_back(sf::Sprite(doomClockTexs[i], sf::IntRect({ 0,0 }, { 165, 165 })));
+           // doomClockStates[i].setTexture(doomClockTexs[i]);
+            doomClockStates[i].setPosition({ (float)((windowWidth / 2.f) + 230), (float)(windowHeight - 170) });
+        }
+       // sf::Texture texture;
+        /*
+        // Загружаем изображение из файла
+        if (!texture.loadFromFile("image.png")) {
+            // Если файл не найден или поврежден, SFML выведет ошибку в консоль
+            return -1;
+        }
+        doomClockStates[0].
+            //*/
         backgroundTex.loadFromFile("resources\\background1.jpg");
         cardTex.loadFromFile("resources\\cards.png");
         paramsTex.loadFromFile("resources\\common_params.png");
@@ -625,7 +652,7 @@ int main()
 
 
     VisualParameter moralParam(paramsTex,
-        sf::Vector2f{ (float)((windowWidth / 2.f) - 130), (float)(windowHeight - 120) },
+        sf::Vector2f{ (float)((windowWidth / 2.f) - 130 - 55), (float)(windowHeight - 120) },
         sf::IntRect({ 0, 0 }, { 110, 110 }),
         sf::Color::Green,
         { 5.f, 5.f });
@@ -633,7 +660,7 @@ int main()
     objects.push_back(&moralParam);
 
     VisualParameter influenceParam(paramsTex,
-        sf::Vector2f{ (float)((windowWidth / 2.f) + 130), (float)(windowHeight - 120) },
+        sf::Vector2f{ (float)((windowWidth / 2.f) + 130 - 55), (float)(windowHeight - 120) },
         sf::IntRect({ 220, 0 }, { 110, 110 }),
         sf::Color::Blue,
         { 5.f, 5.f });
@@ -641,7 +668,7 @@ int main()
     objects.push_back(&influenceParam);
 
     VisualParameter financeParam(paramsTex,
-        sf::Vector2f{ (float)(windowWidth / 2.f), (float)(windowHeight - 120) },
+        sf::Vector2f{ (float)((windowWidth / 2.f) - 55), (float)(windowHeight - 120) },
         sf::IntRect({ 110, 0 }, { 110, 110 }),
         sf::Color::Yellow,
         { 5.f, 5.f });
@@ -652,7 +679,7 @@ int main()
 
 
     VisualParameter ideologyWin(uniqueParamsTex,
-        sf::Vector2f{ (float)(windowWidth / 2.f) - 600, (float)(windowHeight - 238) },
+        sf::Vector2f{ (float)(windowWidth / 2.f) - 600 - 55, (float)(windowHeight - 238) },
         sf::IntRect({ 0, 0 }, { 218, 218 }),
         sf::Color::Red,
         { 5.f, 5.f });
@@ -660,7 +687,7 @@ int main()
     objects.push_back(&ideologyWin);
     ideologyWin.setValue(1.f);
     VisualParameter miliatarWin(uniqueParamsTex,
-        sf::Vector2f{ (float)(windowWidth / 2.f) - 600, (float)(windowHeight - 238) },
+        sf::Vector2f{ (float)(windowWidth / 2.f) - 600 - 55, (float)(windowHeight - 238) },
         sf::IntRect({ 218, 0 }, { 218, 218 }),
         sf::Color::Red,
         { 5.f, 5.f });
@@ -670,7 +697,7 @@ int main()
 
 
     VisualParameter miliatarPower(uniqueParamsTex,
-        sf::Vector2f{ (float)(windowWidth / 2.f) - 360, (float)(windowHeight - 238) },
+        sf::Vector2f{ (float)(windowWidth / 2.f) - 360 - 55, (float)(windowHeight - 238) },
         sf::IntRect({ 218, 0 }, { 218, 218 }),
         sf::Color::Red,
         { 5.f, 5.f });
@@ -731,6 +758,8 @@ int main()
             cur.deltastatesYesChoice.b_greenChance = (float)(card["effectsYes"]["g_moral"]) / 100.f;
             cur.deltastatesYesChoice.b_redChance = (float)(card["effectsYes"]["g_moral"]) / 100.f;
             cur.deltastatesYesChoice.b_yellowChance = (float)(card["effectsYes"]["g_moral"]) / 100.f;
+
+            cur.deltastatesYesChoice.doomsdayClockProgress = (float)(card["effectsYes"]["doomsdayWatch"]) / 100.f;
                                                             
             cur.deltastatesNoChoice.s_moral =      (float)(card["effectsNo"]["s_moral"]) / 100.f;
             cur.deltastatesNoChoice.s_ideology =   (float)(card["effectsNo"]["s_ideology"]) / 100.f;
@@ -746,7 +775,7 @@ int main()
             cur.deltastatesNoChoice.b_redChance =  (float)(card["effectsNo"]["g_moral"]) / 100.f;
             cur.deltastatesNoChoice.b_yellowChance = (float)(card["effectsNo"]["g_moral"])/100.f;
 
-
+            cur.deltastatesNoChoice.doomsdayClockProgress = (float)(card["effectsYes"]["doomsdayWatch"]) / 100.f;
 
            // float doomsdayYes = card["effectsYes"]["doomsdayWatch"];
 
@@ -796,10 +825,10 @@ int main()
     
     TextBox movedescription{ cardFont, 32 };
     movedescription.setPosition({ (float)(windowWidth / 2) - 880, (float)(windowHeight / 2) });
-   
+    
     
     ideologyWin.InsertValue(gameState.countries.s_ideology);
-    miliatarWin.InsertValue(gameState.doomsdayClockProgress);
+    miliatarWin.InsertValue(gameState.countries.doomsdayClockProgress);
     yellowChance.InsertValue(gameState.countries.b_yellowChance);
     miliatarPower.InsertValue(gameState.countries.s_power);
     while (window.isOpen())
@@ -890,7 +919,7 @@ int main()
                     moralParam.InsertValue(gameState.countries.g_moral);
                     financeParam.InsertValue(gameState.countries.g_finance);
                     influenceParam.InsertValue(gameState.countries.g_influence);
-                    miliatarWin.InsertValue(gameState.doomsdayClockProgress);
+                    miliatarWin.InsertValue(gameState.countries.doomsdayClockProgress);
                     miliatarPower.InsertValue(gameState.countries.g_power);
                     ideologyWin.shown = 0;
                     miliatarWin.shown = 1;
@@ -929,7 +958,7 @@ int main()
         for (sf::Drawable* dr : objects)
             window.draw(*dr);
 
-        movedescription.setPosition({ (float)(windowWidth / 2) - 880, (float)(windowHeight / 2) });
+        movedescription.setPosition({ (float)(windowWidth / 2) - 880, (float)(windowHeight / 2) - 200 });
         std::string s = "Отклонить\nЭффекты хода:\nСоветский союз:\n";
         s += "Идеология: " + std::to_string((int)(current->deltastatesNoChoice.s_ideology * 100)) + "\n";
         s += "Финансы: " + std::to_string((int)(current->deltastatesNoChoice.s_finance * 100)) + "\n";
@@ -940,13 +969,14 @@ int main()
         s += "Финансы: " + std::to_string((int)(current->deltastatesNoChoice.g_finance * 100)) + "\n";
         s += "Влияние: " + std::to_string((int)(current->deltastatesNoChoice.g_influence * 100)) + "\n";
     //    s += "Влияние: " + std::to_string(current->deltastatesNoChoice.) + "\n";
-        s += "Боевой дух: " + std::to_string((int)(current->deltastatesNoChoice.g_moral * 100)) + "\nБритания:\n";
+        s += "Боевой дух: " + std::to_string((int)(current->deltastatesNoChoice.g_moral * 100)) + "\n";
+        s += "Начало войны: " + std::to_string((int)(current->deltastatesNoChoice.doomsdayClockProgress * 100)) + "\nБритания:\n";
 
         movedescription.setText(sf::String(systemToSfString(s)));
 
         window.draw(movedescription);
 
-        movedescription.setPosition({ (float)(windowWidth / 2) + 700, (float)(windowHeight / 2) });
+        movedescription.setPosition({ (float)(windowWidth / 2) + 700, (float)(windowHeight / 2) - 200 });
         s = "Принять\nЭффекты хода:\nСоветский союз:\n";
         s += "Идеология: " + std::to_string((int)(current->deltastatesYesChoice.s_ideology * 100)) + "\n";
         s += "Финансы: " + std::to_string((int)(current->deltastatesYesChoice.s_finance * 100)) + "\n";
@@ -956,14 +986,15 @@ int main()
         s += "Военная мощь: " + std::to_string((int)(current->deltastatesYesChoice.g_power * 100)) + "\n";
         s += "Финансы: " + std::to_string((int)(current->deltastatesYesChoice.g_finance * 100)) + "\n";
         s += "Влияние: " + std::to_string((int)(current->deltastatesYesChoice.g_influence * 100)) + "\n";
-        s += "Боевой дух: " + std::to_string((int)(current->deltastatesYesChoice.g_moral * 100)) + "\nБритания:\n";
+        s += "Боевой дух: " + std::to_string((int)(current->deltastatesYesChoice.g_moral * 100)) + "\n";
+        s += "Начало войны: " + std::to_string((int)(current->deltastatesNoChoice.doomsdayClockProgress * 100)) + "\nБритания:\n";
 
         movedescription.setText(sf::String(systemToSfString(s)));
 
         window.draw(movedescription);
         current->update(deltaTime, 4.f);
  
-
+        window.draw(doomClockStates[(int)(gameState.countries.doomsdayClockProgress * 12)]);
 
         window.draw(*current);
         window.draw(damper);
