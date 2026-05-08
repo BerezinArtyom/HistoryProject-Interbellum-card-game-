@@ -132,10 +132,12 @@ struct CardModifiers
     float    s_finance = 1.f;
     float    s_moral = 1.f;
     float    s_influence = 1.f;
+    float    s_power = 1.f;
 
     float    g_finance = 1.f;
     float    g_moral = 1.f;
     float    g_influence = 1.f;
+    float    g_power = 1.f;
 
     float    b_agentNet = 1.f;
     float    b_redChance = 1.f;
@@ -163,13 +165,15 @@ struct CardModifiers
 struct CountryStates
 {
     float    s_ideology = 0.25f;
-    int      s_finance = 0.15f;
+    float      s_finance = 0.15f;
     float    s_moral = 0.75f;
     float    s_influence = 0.20f;
+    float    s_power = 0.20f;
 
-    int      g_finance = 0.35;
+    float      g_finance = 0.35;
     float    g_moral = 0.40f;
     float    g_influence = 0.20f;
+    float    g_power = 0.20f;
 
     float    b_agentNet = 0.25f;
     float    b_redChance = 0.25f;
@@ -183,10 +187,12 @@ struct CountryStates
         s_finance += other.s_finance * modifiers.s_finance;
         s_moral += other.s_moral * modifiers.s_moral;
         s_influence += other.s_influence * modifiers.s_influence;
+        s_power += other.s_power * modifiers.s_power;
 
         g_finance += other.g_finance * modifiers.g_finance;
         g_moral += other.g_moral * modifiers.g_moral;
         g_influence += other.g_influence * modifiers.g_influence;
+        g_power += other.g_power * modifiers.g_power;
 
         b_agentNet += other.b_agentNet * modifiers.b_agentNet;
         b_redChance += other.b_redChance * modifiers.b_redChance;
@@ -640,13 +646,13 @@ int main()
         sf::Color::Yellow,
         { 5.f, 5.f });
 
+    financeParam.InsertValue(0.8f);
     objects.push_back(&financeParam);
-    financeParam.setValue(0.8f);
 
 
 
     VisualParameter ideologyWin(uniqueParamsTex,
-        sf::Vector2f{ (float)(windowWidth / 2.f) - 500, (float)(windowHeight - 238) },
+        sf::Vector2f{ (float)(windowWidth / 2.f) - 600, (float)(windowHeight - 238) },
         sf::IntRect({ 0, 0 }, { 218, 218 }),
         sf::Color::Red,
         { 5.f, 5.f });
@@ -654,13 +660,22 @@ int main()
     objects.push_back(&ideologyWin);
     ideologyWin.setValue(1.f);
     VisualParameter miliatarWin(uniqueParamsTex,
-        sf::Vector2f{ (float)(windowWidth / 2.f) - 500, (float)(windowHeight - 238) },
+        sf::Vector2f{ (float)(windowWidth / 2.f) - 600, (float)(windowHeight - 238) },
+        sf::IntRect({ 218, 0 }, { 218, 218 }),
+        sf::Color::Red,
+        { 5.f, 5.f });
+    
+    objects.push_back(&miliatarWin);
+    miliatarWin.setValue(1.f);
+
+
+    VisualParameter miliatarPower(uniqueParamsTex,
+        sf::Vector2f{ (float)(windowWidth / 2.f) - 360, (float)(windowHeight - 238) },
         sf::IntRect({ 218, 0 }, { 218, 218 }),
         sf::Color::Red,
         { 5.f, 5.f });
 
-    objects.push_back(&miliatarWin);
-    miliatarWin.setValue(1.f);
+    objects.push_back(&miliatarPower);
 
 
 
@@ -674,6 +689,8 @@ int main()
    // yellowChance.setRotation(45);
     objects.push_back(&yellowChance);
     GameState gameState;
+
+    miliatarPower.setValue(gameState.countries.s_power);
 
     std::vector<Card> sovietcards;
     std::vector<Card> germancards;
@@ -705,9 +722,11 @@ int main()
             cur.deltastatesYesChoice.s_ideology =  (float)(card["effectsYes"]["s_ideology"]) / 100.f;
             cur.deltastatesYesChoice.s_influence = (float)(card["effectsYes"]["s_influence"]) / 100.f;
             cur.deltastatesYesChoice.s_finance =   (float)(card["effectsYes"]["s_finance"]) / 100.f;
+            cur.deltastatesYesChoice.s_power =   (float)(card["effectsYes"]["s_power"]) / 100.f;
             cur.deltastatesYesChoice.g_finance =   (float)(card["effectsYes"]["g_finance"]) / 100.f;
             cur.deltastatesYesChoice.g_influence = (float)(card["effectsYes"]["g_influence"]) / 100.f;
             cur.deltastatesYesChoice.g_moral =     (float)(card["effectsYes"]["g_moral"]) / 100.f;
+            cur.deltastatesYesChoice.g_power =     (float)(card["effectsYes"]["g_power"]) / 100.f;
             cur.deltastatesYesChoice.b_agentNet =  (float)(card["effectsYes"]["g_moral"]) / 100.f;
             cur.deltastatesYesChoice.b_greenChance = (float)(card["effectsYes"]["g_moral"]) / 100.f;
             cur.deltastatesYesChoice.b_redChance = (float)(card["effectsYes"]["g_moral"]) / 100.f;
@@ -717,9 +736,11 @@ int main()
             cur.deltastatesNoChoice.s_ideology =   (float)(card["effectsNo"]["s_ideology"]) / 100.f;
             cur.deltastatesNoChoice.s_influence =  (float)(card["effectsNo"]["s_influence"]) / 100.f;
             cur.deltastatesNoChoice.s_finance =    (float)(card["effectsNo"]["s_finance"]) / 100.f;
+            cur.deltastatesNoChoice.s_power =    (float)(card["effectsNo"]["s_power"]) / 100.f;
             cur.deltastatesNoChoice.g_finance =    (float)(card["effectsNo"]["g_finance"]) / 100.f;
             cur.deltastatesNoChoice.g_influence =  (float)(card["effectsNo"]["g_influence"]) / 100.f;
             cur.deltastatesNoChoice.g_moral =      (float)(card["effectsNo"]["g_moral"]) / 100.f;
+            cur.deltastatesNoChoice.g_power =      (float)(card["effectsNo"]["g_power"]) / 100.f;
             cur.deltastatesNoChoice.b_agentNet =   (float)(card["effectsNo"]["g_moral"]) / 100.f;
             cur.deltastatesNoChoice.b_greenChance = (float)(card["effectsNo"]["g_moral"]) / 100.f;
             cur.deltastatesNoChoice.b_redChance =  (float)(card["effectsNo"]["g_moral"]) / 100.f;
@@ -762,17 +783,17 @@ int main()
 
     current->moveTo({ (float)(windowWidth / 2), (float)(windowHeight / 2) });
     bool cardSwiped = 0;
-    {
-        moralParam.shown = 1;
-        financeParam.shown = 1;
-        influenceParam.shown = 1;
-        moralParam.InsertValue(gameState.countries.s_moral);
-        financeParam.InsertValue(gameState.countries.s_finance);
-        influenceParam.InsertValue(gameState.countries.s_influence);
-        ideologyWin.shown = 1;
-        miliatarWin.shown = 0;
-        yellowChance.shown = 0;
-    }
+    
+    moralParam.shown = 1;
+    financeParam.shown = 1;
+    influenceParam.shown = 1;
+    moralParam.InsertValue(gameState.countries.s_moral);
+    financeParam.InsertValue(gameState.countries.s_finance);
+    influenceParam.InsertValue(gameState.countries.s_influence);
+    ideologyWin.shown = 1;
+    miliatarWin.shown = 0;
+    yellowChance.shown = 0;
+    
     TextBox movedescription{ cardFont, 32 };
     movedescription.setPosition({ (float)(windowWidth / 2) - 880, (float)(windowHeight / 2) });
    
@@ -780,6 +801,7 @@ int main()
     ideologyWin.InsertValue(gameState.countries.s_ideology);
     miliatarWin.InsertValue(gameState.doomsdayClockProgress);
     yellowChance.InsertValue(gameState.countries.b_yellowChance);
+    miliatarPower.InsertValue(gameState.countries.s_power);
     while (window.isOpen())
     {
         float deltaTime = clock.restart().asSeconds();
@@ -848,10 +870,12 @@ int main()
                     moralParam.shown = 1;
                     financeParam.shown = 1;
                     influenceParam.shown = 1;
+                    miliatarPower.shown = 1;
                     moralParam.InsertValue(gameState.countries.s_moral);
                     financeParam.InsertValue(gameState.countries.s_finance);
                     influenceParam.InsertValue(gameState.countries.s_influence);
                     ideologyWin.InsertValue(gameState.countries.s_ideology);
+                    miliatarPower.InsertValue(gameState.countries.s_power);
                     ideologyWin.shown = 1;
                     miliatarWin.shown = 0;
                     yellowChance.shown = 0;
@@ -862,10 +886,12 @@ int main()
                     moralParam.shown = 1;
                     financeParam.shown = 1;
                     influenceParam.shown = 1;
+                    miliatarPower.shown = 1;
                     moralParam.InsertValue(gameState.countries.g_moral);
                     financeParam.InsertValue(gameState.countries.g_finance);
                     influenceParam.InsertValue(gameState.countries.g_influence);
                     miliatarWin.InsertValue(gameState.doomsdayClockProgress);
+                    miliatarPower.InsertValue(gameState.countries.g_power);
                     ideologyWin.shown = 0;
                     miliatarWin.shown = 1;
                     yellowChance.shown = 0;
@@ -879,6 +905,7 @@ int main()
                     ideologyWin.shown = 0;
                     miliatarWin.shown = 0;
                     yellowChance.shown = 1;
+                    miliatarPower.shown = 0;
                     yellowChance.InsertValue(gameState.countries.b_yellowChance);
                     current = &brittishcards[(int)Random(0, brittishcards.size())];
                 }
@@ -904,13 +931,16 @@ int main()
 
         movedescription.setPosition({ (float)(windowWidth / 2) - 880, (float)(windowHeight / 2) });
         std::string s = "Отклонить\nЭффекты хода:\nСоветский союз:\n";
-        s += "Идеология: " + std::to_string(current->deltastatesNoChoice.s_ideology) + "\n";
-        s += "Ресурсы: " + std::to_string(current->deltastatesNoChoice.s_finance) + "\n";
-        s += "Влияние: " + std::to_string(current->deltastatesNoChoice.s_influence) + "\n";
-        s += "Боевой дух: " + std::to_string(current->deltastatesNoChoice.s_moral) + "\nГермания:\n";
-        s += "Ресурсы: " + std::to_string(current->deltastatesNoChoice.g_finance) + "\n";
-        s += "Влияние: " + std::to_string(current->deltastatesNoChoice.g_influence) + "\n";
-        s += "Боевой дух: " + std::to_string(current->deltastatesNoChoice.g_moral) + "\nБритания:\n";
+        s += "Идеология: " + std::to_string((int)(current->deltastatesNoChoice.s_ideology * 100)) + "\n";
+        s += "Финансы: " + std::to_string((int)(current->deltastatesNoChoice.s_finance * 100)) + "\n";
+        s += "Влияние: " + std::to_string((int)(current->deltastatesNoChoice.s_influence * 100)) + "\n";
+        s += "Военная мощь: " + std::to_string((int)(current->deltastatesNoChoice.s_power * 100)) + "\n";
+        s += "Боевой дух: " + std::to_string((int)(current->deltastatesNoChoice.s_moral * 100)) + "\nГермания:\n";
+        s += "Военная мощь: " + std::to_string((int)(current->deltastatesNoChoice.g_power * 100)) + "\n";
+        s += "Финансы: " + std::to_string((int)(current->deltastatesNoChoice.g_finance * 100)) + "\n";
+        s += "Влияние: " + std::to_string((int)(current->deltastatesNoChoice.g_influence * 100)) + "\n";
+    //    s += "Влияние: " + std::to_string(current->deltastatesNoChoice.) + "\n";
+        s += "Боевой дух: " + std::to_string((int)(current->deltastatesNoChoice.g_moral * 100)) + "\nБритания:\n";
 
         movedescription.setText(sf::String(systemToSfString(s)));
 
@@ -918,13 +948,15 @@ int main()
 
         movedescription.setPosition({ (float)(windowWidth / 2) + 700, (float)(windowHeight / 2) });
         s = "Принять\nЭффекты хода:\nСоветский союз:\n";
-        s += "Идеология: " + std::to_string(current->deltastatesYesChoice.s_ideology) + "\n";
-        s += "Ресурсы: " + std::to_string(current->deltastatesYesChoice.s_finance) + "\n";
-        s += "Влияние: " + std::to_string(current->deltastatesYesChoice.s_influence) + "\n";
-        s += "Боевой дух: " + std::to_string(current->deltastatesYesChoice.s_moral) + "\nГермания:\n";
-        s += "Ресурсы: " + std::to_string(current->deltastatesYesChoice.g_finance) + "\n";
-        s += "Влияние: " + std::to_string(current->deltastatesYesChoice.g_influence) + "\n";
-        s += "Боевой дух: " + std::to_string(current->deltastatesYesChoice.g_moral) + "\nБритания:\n";
+        s += "Идеология: " + std::to_string((int)(current->deltastatesYesChoice.s_ideology * 100)) + "\n";
+        s += "Финансы: " + std::to_string((int)(current->deltastatesYesChoice.s_finance * 100)) + "\n";
+        s += "Влияние: " + std::to_string((int)(current->deltastatesYesChoice.s_influence * 100)) + "\n";
+        s += "Военная мощь: " + std::to_string((int)(current->deltastatesYesChoice.s_power * 100)) + "\n";
+        s += "Боевой дух: " + std::to_string((int)(current->deltastatesYesChoice.s_moral * 100)) + "\nГермания:\n";
+        s += "Военная мощь: " + std::to_string((int)(current->deltastatesYesChoice.g_power * 100)) + "\n";
+        s += "Финансы: " + std::to_string((int)(current->deltastatesYesChoice.g_finance * 100)) + "\n";
+        s += "Влияние: " + std::to_string((int)(current->deltastatesYesChoice.g_influence * 100)) + "\n";
+        s += "Боевой дух: " + std::to_string((int)(current->deltastatesYesChoice.g_moral * 100)) + "\nБритания:\n";
 
         movedescription.setText(sf::String(systemToSfString(s)));
 
