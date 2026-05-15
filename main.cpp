@@ -6,6 +6,14 @@
 #include <nlohmann/json.hpp>
 #include <windows.h>
 #include <random>
+
+
+class Static
+{
+public:
+    static inline int windowWidth = 1600, windowHeight = 800;
+};
+
 sf::String systemToSfString(const std::string& str) {
     if (str.empty()) return sf::String();
 
@@ -229,7 +237,10 @@ public:
         setScale({ 1.0f, 1.0f });
 
     }
-
+    bool containsPoint(sf::Vector2f point) noexcept
+    {
+        return cardSprite.getGlobalBounds().contains(point);
+    }
 
     void setRotation(float angle) noexcept
     {
@@ -332,6 +343,7 @@ public:
     CountryStates deltastatesYesChoice;
     CountryStates deltastatesNoChoice;
     double flipProgress = 1.0;
+    sf::IntRect cardTextureRect;
 private:
     sf::Vector2f scale = { 1.f, 1.f };
     sf::Vector2f startPos;
@@ -348,7 +360,6 @@ private:
     sf::Sprite  cardSprite;
     TextBox     description;
     float descMargin;
-    sf::IntRect cardTextureRect;
 
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override
     {
@@ -513,12 +524,32 @@ public:
        // shape.setOrigin({ size.x / 2, size.y });
     }
 
-
-
-    void update(double deltaTime) noexcept
+    bool containsPoint(sf::Vector2f point) noexcept
     {
+        return background.getGlobalBounds().contains(point);
+    }
+
+    void update(double deltaTime, int x, int y) noexcept
+    {
+        if (containsPoint({ (float)x,(float)y }) && cards.size())
+        {
+            float sizebx = background.getTextureRect().size.x;
+            float sizecx = cards[0].cardTextureRect.size.x;
+            int i = 0;
+            for (Card& c : cards)
+            {
+                int curent = (int)((((float)(x - position.x)) / sizebx) * cards.size());
+                bool b = curent == i;
+                bool cur = curent < i;
+                c.moveTo({ (float)((Static::windowWidth)-710 + (sizecx / 2) + (i * ((sizebx - sizecx) / (float)cards.size()))) + (cur ? 100.f : 0.f), (float)((Static::windowHeight)-(410 / 2)) + (b ? -20.f : 0.f)});
+                i++;
+            }
+            
+        }
         for (Card& c : cards)
-            c.update(0,0);
+        {
+            c.update(deltaTime, 1);
+        }
     }
 
     bool shown = 1;
@@ -529,7 +560,10 @@ private:
     sf::Vector2f size = { 100, 100 };
     sf::Vector2f position = { 0, 0 };
     sf::Vector2f padding = { 0, 0 };
+    void AddCard()
+    {
 
+    }
 
 
     float animSpeed = 2.f;
@@ -738,10 +772,10 @@ int main()
     setlocale(1, "ru");
     ShowWindow(GetConsoleWindow(), SW_HIDE);
     std::filesystem::current_path("..");
-
+    Static st;
     std::vector<sf::Drawable*> objects;
-    int windowWidth = 1600;
-    int windowHeight = 800;
+    int& windowWidth = st.windowWidth;
+    int& windowHeight = st.windowHeight;
     // Создание окна в полноэкранном режиме
     sf::RenderWindow window(sf::VideoMode({ (unsigned int)windowWidth, (unsigned int)windowHeight }),
         "Interbellum the game",
@@ -839,10 +873,12 @@ int main()
         sf::Vector2f{ (float)((windowWidth) - 710), (float)((windowHeight) - 410) },
         sf::IntRect({ 0, 0 }, { 700, 400 }),
         { 5.f, 5.f });
-
-    specialCardDeck.cards.push_back(Card(specialcardTex, cardFont, sf::IntRect({ 0, 0 }, { 374, 396 })));
-    specialCardDeck.cards.back().setScale({ 0.75f,  0.75f });
-    specialCardDeck.cards.back().teleport(sf::Vector2f{ (float)((windowWidth)-(710 / 2)), (float)((windowHeight)- (410/2))});
+    for (int i = 0; i < 5; i++)
+    {
+        specialCardDeck.cards.push_back(Card(specialcardTex, cardFont, sf::IntRect({ 0, 0 }, { 374, 396 })));
+        specialCardDeck.cards.back().setScale({ 0.75f,  0.75f });
+        specialCardDeck.cards.back().teleport(sf::Vector2f{ (float)((windowWidth)-(710 / 2)), (float)((windowHeight)-(410 / 2)) });
+    }
     objects.push_back(&specialCardDeck);
 
 
@@ -1191,7 +1227,7 @@ int main()
         moralParam.update(deltaTime);
         influenceParam.update(deltaTime);
         financeParam.update(deltaTime);
-        specialCardDeck.update(deltaTime);
+        specialCardDeck.update(deltaTime, cursorPos.x, cursorPos.y);
 
         yellowChance.update(deltaTime);
         redChance.update(deltaTime);
