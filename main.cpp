@@ -531,7 +531,9 @@ public:
 
     void update(double deltaTime, int x, int y) noexcept
     {
-        if (containsPoint({ (float)x,(float)y }) && cards.size())
+        //containsPoint({ (float)x,(float)y }) && 
+        bool hov = containsPoint({ (float)x,(float)y });
+        if (cards.size())
         {
             float sizebx = background.getTextureRect().size.x;
             float sizecx = cards[0].cardTextureRect.size.x;
@@ -539,8 +541,8 @@ public:
             for (Card& c : cards)
             {
                 int curent = (int)((((float)(x - position.x)) / sizebx) * cards.size());
-                bool b = curent == i;
-                bool cur = curent < i;
+                bool b = curent == i && hov;
+                bool cur = curent < i && hov;
                 c.moveTo({ (float)((Static::windowWidth)-710 + (sizecx / 2) + (i * ((sizebx - sizecx) / (float)cards.size()))) + (cur ? 100.f : 0.f), (float)((Static::windowHeight)-(410 / 2)) + (b ? -20.f : 0.f)});
                 i++;
             }
@@ -868,19 +870,43 @@ int main()
     financeParam.InsertValue(0.8f);
     objects.push_back(&financeParam);
 
-
-    SpecialCardDeck specialCardDeck(SpecialBackgroundTex,
+    
+    SpecialCardDeck specialCardDeckS(SpecialBackgroundTex,
         sf::Vector2f{ (float)((windowWidth) - 710), (float)((windowHeight) - 410) },
         sf::IntRect({ 0, 0 }, { 700, 400 }),
         { 5.f, 5.f });
     for (int i = 0; i < 5; i++)
     {
-        specialCardDeck.cards.push_back(Card(specialcardTex, cardFont, sf::IntRect({ 0, 0 }, { 374, 396 })));
-        specialCardDeck.cards.back().setScale({ 0.75f,  0.75f });
-        specialCardDeck.cards.back().teleport(sf::Vector2f{ (float)((windowWidth)-(710 / 2)), (float)((windowHeight)-(410 / 2)) });
+        // 0 - soviet, 1 - german, 3 - brittish red, 4 - brittish yellow, 5 - brittish green
+        int type = 0;
+        specialCardDeckS.cards.push_back(Card(specialcardTex, cardFont, sf::IntRect({ 0, 0 }, { 374, 396 })));
+        specialCardDeckS.cards.back().cardType = type;
+        specialCardDeckS.cards.back().setScale({ 0.75f,  0.75f });
+        specialCardDeckS.cards.back().teleport(sf::Vector2f{ (float)((windowWidth)-(710 / 2)), (float)((windowHeight)-(410 / 2)) });
     }
-    objects.push_back(&specialCardDeck);
-
+    SpecialCardDeck specialCardDeckG(SpecialBackgroundTex,
+        sf::Vector2f{ (float)((windowWidth) - 710), (float)((windowHeight) - 410) },
+        sf::IntRect({ 0, 0 }, { 700, 400 }),
+        { 5.f, 5.f });
+    for (int i = 0; i < 5; i++)
+    {
+        int type = 1;
+        specialCardDeckG.cards.push_back(Card(specialcardTex, cardFont, sf::IntRect({ 0, 0 }, { 374, 396 })));
+        specialCardDeckG.cards.back().cardType = type;
+        specialCardDeckG.cards.back().setScale({ 0.75f,  0.75f });
+        specialCardDeckG.cards.back().teleport(sf::Vector2f{ (float)((windowWidth)-(710 / 2)), (float)((windowHeight)-(410 / 2)) });
+    }
+    SpecialCardDeck specialCardDeckB(SpecialBackgroundTex,
+        sf::Vector2f{ (float)((windowWidth) - 710), (float)((windowHeight) - 410) },
+        sf::IntRect({ 0, 0 }, { 700, 400 }),
+        { 5.f, 5.f });
+    for (int i = 0; i < 5; i++)
+    {
+        specialCardDeckB.cards.push_back(Card(specialcardTex, cardFont, sf::IntRect({ 0, 0 }, { 374, 396 })));
+        specialCardDeckB.cards.back().cardType = Random(2,5);
+        specialCardDeckB.cards.back().setScale({ 0.75f,  0.75f });
+        specialCardDeckB.cards.back().teleport(sf::Vector2f{ (float)((windowWidth)-(710 / 2)), (float)((windowHeight)-(410 / 2)) });
+    }
 
 
     VisualParameter ideologyWin(uniqueParamsTex,
@@ -1227,7 +1253,13 @@ int main()
         moralParam.update(deltaTime);
         influenceParam.update(deltaTime);
         financeParam.update(deltaTime);
-        specialCardDeck.update(deltaTime, cursorPos.x, cursorPos.y);
+        switch (damper.currentPlayer)
+        {
+            case 0: { specialCardDeckS.update(deltaTime, cursorPos.x, cursorPos.y); break; }
+            case 1: { specialCardDeckG.update(deltaTime, cursorPos.x, cursorPos.y); break; }
+            case 2: { specialCardDeckB.update(deltaTime, cursorPos.x, cursorPos.y); break; }
+        }
+     //  specialCardDeck.update(deltaTime, cursorPos.x, cursorPos.y);
 
         yellowChance.update(deltaTime);
         redChance.update(deltaTime);
@@ -1278,7 +1310,12 @@ int main()
             doomsdayclockSprite = std::clamp(doomsdayclockSprite, 0, 11);
             window.draw(doomClockStates[doomsdayclockSprite]);
         }
-
+        switch (damper.currentPlayer)
+        {
+        case 0: { window.draw(specialCardDeckS); break; }
+        case 1: { window.draw(specialCardDeckG); break; }
+        case 2: { window.draw(specialCardDeckB); break; }
+        }
 
         window.draw(*current);
 
