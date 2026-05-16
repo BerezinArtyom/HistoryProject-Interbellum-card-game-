@@ -92,12 +92,14 @@ struct CountryStates
         s_finance += other.s_finance * modifiers.s_finance;
         s_moral += other.s_moral * modifiers.s_moral;
         s_influence += other.s_influence * modifiers.s_influence;
-        s_power += other.s_power * modifiers.s_power;
+     //   s_power += other.s_power * modifiers.s_power;
+        s_power += other.s_power * modifiers.s_power * ((s_finance + 1) / 2.f);
 
         g_finance += other.g_finance * modifiers.g_finance;
         g_moral += other.g_moral * modifiers.g_moral;
         g_influence += other.g_influence * modifiers.g_influence;
-        g_power += other.g_power * modifiers.g_power;
+       // g_power += other.g_power * modifiers.g_power;
+        g_power += other.g_power * modifiers.g_power * ((g_finance + 1) / 2.f);
 
         b_agentNet += other.b_agentNet * modifiers.b_agentNet;
         b_redChance += other.b_redChance * modifiers.b_redChance;
@@ -528,7 +530,7 @@ private:
 
         if (oldValue > currentValue)
         {
-            drawSized(oldValue, sf::Color::White);
+         //   drawSized(oldValue, sf::Color::White);
             drawSized(currentValue, color);
         }
         else
@@ -827,10 +829,7 @@ public:
             sf::IntRect({ 0, 0 }, { 700, 400 }),
             { 5.f, 5.f })
     {
-        moralParam.setValue(0.8f);
-        influenceParam.setValue(0.8f);
-        financeParam.InsertValue(0.8f);
-        ideologyWin.setValue(1.f);
+       
         for (int i = 0; i < 5; i++)
         {
             // 0 - soviet, 1 - german, 3 - brittish red, 4 - brittish yellow, 5 - brittish green
@@ -944,11 +943,6 @@ public:
             sf::IntRect({ 0, 0 }, { 700, 400 }),
             { 5.f, 5.f })
     {
-        moralParam.setValue(0.8f);
-
-        influenceParam.setValue(0.8f);
-
-        financeParam.InsertValue(0.8f);
 
         for (int i = 0; i < 5; i++)
         {
@@ -1373,7 +1367,8 @@ int main()
             current->setRotation(-10.f);
         if (cardSwiped)
         {
-            if (damper.state == Damper::AnimationState::Idle)
+          //  if (damper.state == Damper::AnimationState::Idle)
+            if (damper.state == Damper::AnimationState::Closed)
             {
                 cardSwiped = 0;
                 current->teleport({ 0, 0 });
@@ -1430,7 +1425,7 @@ int main()
         window.clear();
         for (sf::Drawable* dr : objects)
             window.draw(*dr);
-/*
+//*
         movedescription.setPosition({ (float)(windowWidth / 2) - 880, (float)(windowHeight / 2) - 200 });
         std::string s = "Отклонить\nЭффекты хода:\nСоветский союз:\n";
         s += "Идеология: " + std::to_string((int)(current->deltastatesNoChoice.s_ideology * 100)) + "\n";
@@ -1463,9 +1458,10 @@ int main()
         s += "Начало войны: " + std::to_string((int)(current->deltastatesNoChoice.doomsdayClockProgress * 100)) + "\nБритания:\n";
 
         movedescription.setText(sf::String(systemToSfString(s)));
+     //   movedescription.setText("123");
         
         window.draw(movedescription);
-        */
+        //*/
         current->update(deltaTime, 4.f);
 
         {
@@ -1511,8 +1507,8 @@ int main()
 
         if (winner != Winner::None)
         {
-            damper.lock();
-            damper.state = Damper::AnimationState::In;
+          //  damper.lock();
+          //  damper.state = Damper::AnimationState::In;
             window.draw(winnerMessage);
         }
 
