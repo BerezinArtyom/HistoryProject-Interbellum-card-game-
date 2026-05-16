@@ -106,6 +106,19 @@ struct CountryStates
         b_yellowChance += other.b_yellowChance * modifiers.b_yellowChance;
         b_greenChance += other.b_greenChance * modifiers.b_greenChance;
 
+        if (s_ideology > 1) s_ideology = 1; if (s_ideology < 0) s_ideology = 0;
+        if (s_finance > 1) s_finance = 1; if (s_finance < 0) s_finance = 0;
+        if (s_moral > 1) s_moral = 1; if (s_moral < 0) s_moral = 0;
+        if (s_influence > 1) s_influence = 1; if (s_influence < 0) s_influence = 0;
+        if (s_power > 1) s_power = 1; if (s_power < 0) s_power = 0;
+        if (g_finance > 1) g_finance = 1; if (g_finance < 0) g_finance = 0; 
+        if (g_moral > 1) g_moral = 1; if (g_moral < 0) g_moral = 0; 
+        if (g_influence > 1) g_influence = 1; if (g_influence < 0) g_influence = 0; 
+        if (g_power > 1) g_power = 1; if (g_power < 0) g_power = 0; 
+        if (b_agentNet > 1) b_agentNet = 1; if (b_agentNet < 0) b_agentNet = 0; 
+        if (b_redChance > 1) b_redChance = 1; if (b_redChance < 0) b_redChance = 0; 
+        if (b_yellowChance > 1) b_yellowChance = 1; if (b_yellowChance < 0) b_yellowChance = 0; 
+        if (b_greenChance > 1) b_greenChance = 1; if (b_greenChance < 0) b_greenChance = 0; 
         doomsdayClockProgress += other.doomsdayClockProgress * modifiers.doomsdayClockProgress;
     }
 };
@@ -383,7 +396,6 @@ public:
     void setScale(const sf::Vector2f& s) noexcept
     {
         scale = s;
-
     }
 
     void setDescription(const sf::String& text) noexcept
@@ -447,90 +459,155 @@ public:
         setPosition(position);
         shape.setFillColor(fillColor);
         shape.setOutlineThickness(0);
-        oldValue = 0;
-    }
 
+        pointShape.setRadius(10);
+        pointShape.setFillColor(sf::Color::Black);
+    }
+    //*
     void setPosition(const sf::Vector2f& pos) noexcept
     {
         position = pos;
         icon.setPosition(pos);
         shape.setPosition({ pos.x, pos.y + size.y });
+        pointShape.setPosition(pos + sf::Vector2f{ (size.x/2), (size.y/2)});
+        pointShape.setOrigin({ 0, (size.y * 0.75f) });
     }
-
+//*/
     void setSize(const sf::Vector2f& size) noexcept
     {
         this->size = size;
         shape.setSize(size - sf::Vector2f{ padding.x * 2, padding.y * 2 });
-        shape.setOrigin({ size.x / 2, size.y });
+       // shape.setOrigin({ size.x / 2, size.y });
     }
 
     void setValue(float value) noexcept
     {
-    //    oldValue = currentValue;
-      //  newValue = std::clamp(value, 0.f, 1.f);
+        /*
+        oldValue = currentValue;
+        newValue = std::clamp(value, 0.f, 1.f);
+        */
     }
 
     void update(double deltaTime) noexcept
-    {/*
+    {
         if (std::abs(oldValue - newValue) > 0.001f)
             oldValue += (newValue - oldValue) * static_cast<float>(deltaTime) * animSpeed;
         else
             oldValue = newValue;
-        
+
         if (std::abs(currentValue - newValue) > 0.5f)
             currentValue += (newValue - currentValue) * static_cast<float>(deltaTime) * animSpeed * 3.f;
         else
             currentValue = newValue;
-            */
     }
-
     void setRotation(float degrees) noexcept
     {
+        rotation = degrees;
+    }
+    /*
+    void setRotation(float degrees) noexcept
+    {
+        float rotation = degrees;
         shape.setRotation(sf::degrees(degrees));
         icon.setRotation(sf::degrees(degrees));
-    }
+        
+        pointShape.setRotation(sf::degrees(degrees));
+    }//*/
     void InsertValue(float f)
     {
+        /*
         currentValue = std::clamp(f, 0.f, 1.f);
         oldValue = currentValue;
         newValue = currentValue;
+        */
     }
     float& currentValue;
-    //float currentValue = 0.f;
-    float oldValue = 0.f;
-    float newValue = 0.f;
+    float& oldValue = currentValue;
+    float& newValue = currentValue;
+    sf::Vector2f scale = { 1.f, 1.f };
+   // float oldValue = 0.f;
+  //  float newValue = 0.f;
     bool shown = 1;
-private:
+    bool hasPoint = 1;
+//private:
     sf::Sprite            icon;
     mutable sf::RectangleShape shape;
-
+    sf::CircleShape pointShape;
     sf::Vector2f size = { 100, 100 };
     sf::Vector2f position = { 0, 0 };
     sf::Vector2f padding = { 0, 0 };
-
-
-
+    float rotation = 0.f;
+   
     float animSpeed = 2.f;
-
+   
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override
     {
         if (!shown)
             return;
         const sf::Color color = shape.getFillColor();
-        shape.setSize(icon.getGlobalBounds().size);
+
+        // Поворот вокруг центра иконки
+        sf::Transform transform;
+        sf::Vector2f center = {
+            position.x + size.x * scale.x / 2.f,
+            position.y + size.y * scale.y / 2.f
+        };
+        transform.translate(center);
+        transform.rotate(sf::degrees(rotation));
+        transform.translate(-center);
+
+        sf::RenderStates rotatedStates = states;
+        rotatedStates.transform *= transform;
 
         auto drawSized = [&](float heightMult, sf::Color c)
             {
                 shape.setFillColor(c);
-                sf::Vector2f s = { size.x, (size.y - padding.y * 2) * heightMult };
+                sf::Vector2f s = {
+                    (size.x - padding.x * 2) * scale.x,
+                    (size.y - padding.y * 2) * scale.y * heightMult
+                };
                 shape.setSize(s);
-                shape.setOrigin({ 0, s.y + padding.y });
-                target.draw(shape, states);
+                shape.setOrigin({ 0.f, s.y });
+                shape.setPosition({
+                    position.x + padding.x * scale.x,
+                    position.y + size.y * scale.y - padding.y * scale.y
+                    });
+                shape.setRotation(sf::degrees(0));
+                target.draw(shape, rotatedStates);
             };
 
         if (oldValue > currentValue)
         {
-         //   drawSized(oldValue, sf::Color::White);
+            drawSized(oldValue, sf::Color::White);
+            drawSized(currentValue, color);
+        }
+        else
+        {
+            sf::Color trns = color;
+            trns.a = 128;
+            drawSized(currentValue, trns);
+            drawSized(oldValue, color);
+        }
+
+        target.draw(icon, rotatedStates);
+        if (hasPoint)
+            target.draw(pointShape, rotatedStates);
+        /*
+        const sf::Color color = shape.getFillColor();
+        shape.setSize(icon.getGlobalBounds().size);
+
+        auto drawSized = [&](float heightMult, sf::Color c)
+        {
+            shape.setFillColor(c);
+            sf::Vector2f s = { size.x, (size.y - padding.y * 2) * heightMult };
+            shape.setSize(s);
+            shape.setOrigin({ 0, s.y + padding.y });
+            target.draw(shape, states);
+        };
+
+        if (oldValue > currentValue)
+        {
+            drawSized(oldValue, sf::Color::White);
             drawSized(currentValue, color);
         }
         else
@@ -541,8 +618,18 @@ private:
             drawSized(currentValue, trns);
             drawSized(oldValue, color);
         }
+        
 
+        /*
+        sf::Vector2f s = { size.x, (size.y - padding.y * 2) * currentValue };
+        shape.setSize(s);
+        shape.setPosition(icon.getPosition());
+        target.draw(shape, states);
+        
         target.draw(icon, states);
+        if(hasPoint)
+            target.draw(pointShape, states);
+            */
     }
 };
 class SpecialCardDeck : public sf::Drawable
@@ -595,10 +682,9 @@ public:
                 int curent = (int)((((float)(x - position.x)) / sizebx) * cards.size());
                 bool b = curent == i && hov;
                 bool cur = curent < i && hov;
-                c.moveTo({ (float)((windowWidth)-710 + (sizecx / 2) + (i * ((sizebx - sizecx) / (float)cards.size()))) + (cur ? 100.f : 0.f), (float)((windowHeight)-(410 / 2)) + (b ? -20.f : 0.f)});
+                c.moveTo({ (float)((windowWidth)-710 + (sizecx / 2) + (i * ((sizebx - sizecx) / (float)cards.size()))) + (cur ? 90.f : 0.f), (float)((windowHeight)-(410 / 2) - 50) + (b ? -120.f : 0.f)});
                 i++;
             }
-            
         }
         for (Card& c : cards)
         {
@@ -623,9 +709,9 @@ private:
     {
         if (!shown)
             return;
-        target.draw(background, states);
         for(int i = 0; i < cards.size(); i++)
             target.draw(cards[i], states);
+        target.draw(background, states);
     }
 };
 
@@ -836,7 +922,7 @@ public:
             int type = 0;
             specialCardDeckS.cards.push_back(Card(specialcardTex, cardFont, sf::IntRect({ 0, 0 }, { 374, 396 })));
             specialCardDeckS.cards.back().cardType = type;
-            specialCardDeckS.cards.back().setScale({ 0.75f,  0.75f });
+            specialCardDeckS.cards.back().setScale({ 1.f,  1.f });
             specialCardDeckS.cards.back().teleport(sf::Vector2f{ (float)((windowWidth)-(710 / 2)), (float)((windowHeight)-(410 / 2)) });
         }
     }
@@ -855,14 +941,14 @@ public:
         miliatarPower.setRotation(0);
         state = State::center;
     }
-    void SetRight()
+    void SetLeft()
     {
-        moralParam.setPosition(sf::Vector2f{ static_cast<float>(150), static_cast<float>(350) });
-        influenceParam.setPosition(sf::Vector2f{ (float)(270), (float)(300) });
-        financeParam.setPosition(sf::Vector2f{ (float)(390), (float)(250) });
-        miliatarPower.setPosition(sf::Vector2f{ (float)(600), (float)(150) });
+        moralParam.setPosition(sf::Vector2f{ static_cast<float>(0), static_cast<float>(100) });
+        influenceParam.setPosition(sf::Vector2f{ (float)(120), (float)(50) });
+        financeParam.setPosition(sf::Vector2f{ (float)(240), (float)(0) });
+        miliatarPower.setPosition(sf::Vector2f{ (float)(400), (float)(50) });
 
-        ideologyWin.setPosition(sf::Vector2f{ (float)(250), (float)(150) });
+        ideologyWin.setPosition(sf::Vector2f{ (float)(50), (float)(250) });
 
         moralParam.setRotation(150);
         influenceParam.setRotation(150);
@@ -871,14 +957,14 @@ public:
         miliatarPower.setRotation(150);
         state = State::rigth;
     }
-    void SetLeft()
+    void SetRight()
     {
-        moralParam.setPosition(sf::Vector2f{ static_cast<float>(windowWidth - 150), static_cast<float>(400) });
-        influenceParam.setPosition(sf::Vector2f{ (float)(windowWidth - 270), (float)(350) });
-        financeParam.setPosition(sf::Vector2f{ (float)(windowWidth - 390), (float)(300) });
-        miliatarPower.setPosition(sf::Vector2f{ (float)(windowWidth - 550), (float)(200) });
+        moralParam.setPosition(sf::Vector2f{ static_cast<float>(windowWidth - 150), static_cast<float>(100) });
+        influenceParam.setPosition(sf::Vector2f{ (float)(windowWidth - 270), (float)(50) });
+        financeParam.setPosition(sf::Vector2f{ (float)(windowWidth - 390), (float)(0) });
+        miliatarPower.setPosition(sf::Vector2f{ (float)(windowWidth - 650), (float)(50) });
 
-        ideologyWin.setPosition(sf::Vector2f{ (float)(windowWidth - 250), (float)(200) });
+        ideologyWin.setPosition(sf::Vector2f{ (float)(windowWidth - 300), (float)(250) });
 
         moralParam.setRotation(-150);
         influenceParam.setRotation(-150);
@@ -949,7 +1035,7 @@ public:
             int type = 1;
             specialCardDeckG.cards.push_back(Card(specialcardTex, cardFont, sf::IntRect({ 0, 0 }, { 374, 396 })));
             specialCardDeckG.cards.back().cardType = type;
-            specialCardDeckG.cards.back().setScale({ 0.75f,  0.75f });
+            specialCardDeckG.cards.back().setScale({ 1.f,  1.f });
             specialCardDeckG.cards.back().teleport(sf::Vector2f{ (float)((windowWidth)-(710 / 2)), (float)((windowHeight)-(410 / 2)) });
         }
     }
@@ -966,12 +1052,12 @@ public:
         miliatarPower.setRotation(0);
         state = State::center;
     }
-    void SetRight()
+    void SetLeft()
     {
-        moralParam.setPosition(sf::Vector2f{ static_cast<float>(150), static_cast<float>(350) });
-        influenceParam.setPosition(sf::Vector2f{ (float)(270), (float)(300) });
-        financeParam.setPosition(sf::Vector2f{ (float)(390), (float)(250) });
-        miliatarPower.setPosition(sf::Vector2f{ (float)(600), (float)(150) });
+        moralParam.setPosition(sf::Vector2f{ static_cast<float>(0), static_cast<float>(150) });
+        influenceParam.setPosition(sf::Vector2f{ (float)(120), (float)(100) });
+        financeParam.setPosition(sf::Vector2f{ (float)(240), (float)(50) });
+        miliatarPower.setPosition(sf::Vector2f{ (float)(400), (float)(50)});
 
 
         moralParam.setRotation(150);
@@ -980,12 +1066,12 @@ public:
         miliatarPower.setRotation(150);
         state = State::rigth;
     }
-    void SetLeft()
+    void SetRight()
     {
-        moralParam.setPosition(sf::Vector2f{ static_cast<float>(windowWidth - 150), static_cast<float>(400) });
-        influenceParam.setPosition(sf::Vector2f{ (float)(windowWidth - 270), (float)(350) });
-        financeParam.setPosition(sf::Vector2f{ (float)(windowWidth - 390), (float)(300) });
-        miliatarPower.setPosition(sf::Vector2f{ (float)(windowWidth - 550), (float)(200) });
+        moralParam.setPosition(sf::Vector2f{ static_cast<float>(windowWidth - 100), static_cast<float>(100) });
+        influenceParam.setPosition(sf::Vector2f{ (float)(windowWidth - 220), (float)(50) });
+        financeParam.setPosition(sf::Vector2f{ (float)(windowWidth - 340), (float)(0) });
+        miliatarPower.setPosition(sf::Vector2f{ (float)(windowWidth - 550), (float)(50) });
 
 
         moralParam.setRotation(-150);
@@ -1050,7 +1136,7 @@ public:
         {
             specialCardDeckB.cards.push_back(Card(specialcardTex, cardFont, sf::IntRect({ 0, 0 }, { 374, 396 })));
             specialCardDeckB.cards.back().cardType = Random(2, 5);
-            specialCardDeckB.cards.back().setScale({ 0.75f,  0.75f });
+            specialCardDeckB.cards.back().setScale({ 1.f,  1.f });
             specialCardDeckB.cards.back().teleport(sf::Vector2f{ (float)((windowWidth)-(710 / 2)), (float)((windowHeight)-(410 / 2)) });
         }
     }
@@ -1065,22 +1151,22 @@ public:
         greenChance.setRotation(0);
         state = State::center;
     }
-    void SetRight()
+    void SetLeft()
     {
-        yellowChance.setPosition(sf::Vector2f{ static_cast<float>(150), static_cast<float>(250) });
-        redChance.setPosition(sf::Vector2f{ static_cast<float>(250), static_cast<float>(200) });
-        greenChance.setPosition(sf::Vector2f{ static_cast<float>(350), static_cast<float>(150) });
+        yellowChance.setPosition(sf::Vector2f{ static_cast<float>(50), static_cast<float>(150) });
+        redChance.setPosition(sf::Vector2f{ static_cast<float>(150), static_cast<float>(100) });
+        greenChance.setPosition(sf::Vector2f{ static_cast<float>(250), static_cast<float>(50) });
 
         yellowChance.setRotation(150);
         redChance.setRotation(150);
         greenChance.setRotation(150);
         state = State::rigth;
     }
-    void SetLeft()
+    void SetRight()
     {
-        yellowChance.setPosition(sf::Vector2f{ static_cast<float>(windowWidth - 150), static_cast<float>(250) });
-        redChance.setPosition(sf::Vector2f{ static_cast<float>(windowWidth - 250), static_cast<float>(200) });
-        greenChance.setPosition(sf::Vector2f{ static_cast<float>(windowWidth - 350), static_cast<float>(150) });
+        yellowChance.setPosition(sf::Vector2f{ static_cast<float>(windowWidth - 150), static_cast<float>(100) });
+        redChance.setPosition(sf::Vector2f{ static_cast<float>(windowWidth - 250), static_cast<float>(50) });
+        greenChance.setPosition(sf::Vector2f{ static_cast<float>(windowWidth - 350), static_cast<float>(0) });
 
         yellowChance.setRotation(-150);
         redChance.setRotation(-150);
@@ -1093,7 +1179,12 @@ public:
         target.draw(redChance, states);
         target.draw(greenChance, states);
         if (state == State::center)
+        {
             target.draw(specialCardDeckB, states);
+            target.draw(buyGreenCard, states);
+            target.draw(buyRedCard, states);
+            target.draw(buyYellowCard, states);
+        }
     }
 
     void update(double deltatime)
@@ -1362,9 +1453,42 @@ int main()
                 gameState.warStarted = true;
         }
         if (mousex > windowWidth / 2)
+        {
             current->setRotation(10.f);
+            sovi.miliatarPower.hasPoint = (current->deltastatesYesChoice.s_power != 0);
+            sovi.moralParam.hasPoint = (current->deltastatesYesChoice.s_moral != 0);
+            sovi.influenceParam.hasPoint = (current->deltastatesYesChoice.s_influence != 0);
+            sovi.ideologyWin.hasPoint = (current->deltastatesYesChoice.s_ideology != 0);
+            sovi.financeParam.hasPoint = (current->deltastatesYesChoice.s_finance != 0);
+
+            gmi.moralParam.hasPoint = (current->deltastatesYesChoice.g_moral != 0);
+            gmi.miliatarPower.hasPoint = (current->deltastatesYesChoice.g_power != 0);
+            gmi.influenceParam.hasPoint = (current->deltastatesYesChoice.g_influence != 0);
+            gmi.financeParam.hasPoint = (current->deltastatesYesChoice.g_finance != 0);
+
+            bmi.greenChance.hasPoint = (current->deltastatesYesChoice.b_greenChance != 0);
+            bmi.redChance.hasPoint = (current->deltastatesYesChoice.b_redChance != 0);
+            bmi.yellowChance.hasPoint = (current->deltastatesYesChoice.b_yellowChance != 0);
+           // bmi.financeParam.hasPoint = (current->deltastatesYesChoice.g_finance != 0);
+        }
         else
+        {
             current->setRotation(-10.f);
+            sovi.miliatarPower.hasPoint = (current->deltastatesNoChoice.s_power != 0);
+            sovi.moralParam.hasPoint = (current->deltastatesNoChoice.s_moral != 0);
+            sovi.influenceParam.hasPoint = (current->deltastatesNoChoice.s_influence != 0);
+            sovi.ideologyWin.hasPoint = (current->deltastatesNoChoice.s_ideology != 0);
+            sovi.financeParam.hasPoint = (current->deltastatesNoChoice.s_finance != 0);
+
+            gmi.moralParam.hasPoint = (current->deltastatesNoChoice.g_moral != 0);
+            gmi.miliatarPower.hasPoint = (current->deltastatesNoChoice.g_power != 0);
+            gmi.influenceParam.hasPoint = (current->deltastatesNoChoice.g_influence != 0);
+            gmi.financeParam.hasPoint = (current->deltastatesNoChoice.g_finance != 0);
+
+            bmi.greenChance.hasPoint = (current->deltastatesNoChoice.b_greenChance != 0);
+            bmi.redChance.hasPoint = (current->deltastatesNoChoice.b_redChance != 0);
+            bmi.yellowChance.hasPoint = (current->deltastatesNoChoice.b_yellowChance != 0);
+        }
         if (cardSwiped)
         {
           //  if (damper.state == Damper::AnimationState::Idle)
@@ -1378,7 +1502,6 @@ int main()
                     gmi.SetLeft();
                     bmi.SetRight();
                     current = &sovietcards[(int)Random(0, sovietcards.size())];
-
                 }
                 else if (damper.currentPlayer == 1)
                 {
@@ -1386,7 +1509,6 @@ int main()
                     gmi.SetCenter();
                     bmi.SetLeft();
                     current = &germancards[(int)Random(0, germancards.size())];
-
                 }
                 if (damper.currentPlayer == 2)
                 {
@@ -1394,7 +1516,6 @@ int main()
                     gmi.SetRight();
                     bmi.SetCenter();
                     current = &brittishcards[(int)Random(0, brittishcards.size())];
-
                 }
 
                 current->moveTo({ (float)(windowWidth / 2), (float)(windowHeight / 2) });
