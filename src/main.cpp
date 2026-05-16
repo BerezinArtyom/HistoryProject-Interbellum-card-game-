@@ -447,7 +447,6 @@ public:
         setPosition(position);
         shape.setFillColor(fillColor);
         shape.setOutlineThickness(0);
-        oldValue = 0;
     }
 
     void setPosition(const sf::Vector2f& pos) noexcept
@@ -466,22 +465,23 @@ public:
 
     void setValue(float value) noexcept
     {
-    //    oldValue = currentValue;
-      //  newValue = std::clamp(value, 0.f, 1.f);
+        /*
+        oldValue = currentValue;
+        newValue = std::clamp(value, 0.f, 1.f);
+        */
     }
 
     void update(double deltaTime) noexcept
-    {/*
+    {
         if (std::abs(oldValue - newValue) > 0.001f)
             oldValue += (newValue - oldValue) * static_cast<float>(deltaTime) * animSpeed;
         else
             oldValue = newValue;
-        
+
         if (std::abs(currentValue - newValue) > 0.5f)
             currentValue += (newValue - currentValue) * static_cast<float>(deltaTime) * animSpeed * 3.f;
         else
             currentValue = newValue;
-            */
     }
 
     void setRotation(float degrees) noexcept
@@ -491,14 +491,17 @@ public:
     }
     void InsertValue(float f)
     {
+        /*
         currentValue = std::clamp(f, 0.f, 1.f);
         oldValue = currentValue;
         newValue = currentValue;
+        */
     }
     float& currentValue;
-    //float currentValue = 0.f;
-    float oldValue = 0.f;
-    float newValue = 0.f;
+    float& oldValue = currentValue;
+    float& newValue = currentValue;
+   // float oldValue = 0.f;
+  //  float newValue = 0.f;
     bool shown = 1;
 private:
     sf::Sprite            icon;
@@ -530,7 +533,7 @@ private:
 
         if (oldValue > currentValue)
         {
-         //   drawSized(oldValue, sf::Color::White);
+            drawSized(oldValue, sf::Color::White);
             drawSized(currentValue, color);
         }
         else
