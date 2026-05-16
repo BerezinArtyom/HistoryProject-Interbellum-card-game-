@@ -6,6 +6,144 @@
 #include <nlohmann/json.hpp>
 #include <windows.h>
 #include <random>
+
+/*
+class Static
+{
+public:
+    static inline int windowWidth = 1600, windowHeight = 800, mousex, mousey;
+};
+*/
+static inline int windowWidth = 1600, windowHeight = 800, mousex, mousey;
+static inline sf::Font specialFont;
+static inline sf::Font cardFont;
+static inline sf::Texture backgroundTex, cardTex, specialcardTex, paramsTex, uniqueParamsTex, damperTex, britainTex, SpecialBackgroundTex;
+static inline std::vector<sf::Texture> doomClockTexs;
+static inline std::vector<sf::Drawable*> objects;
+enum class Winner
+{
+    None,
+    USSR,
+    Germany,
+    Britain
+
+};
+struct CardModifiers
+{
+    float    s_ideology = 1.f;
+    float    s_finance = 1.f;
+    float    s_moral = 1.f;
+    float    s_influence = 1.f;
+    float    s_power = 1.f;
+
+    float    g_finance = 1.f;
+    float    g_moral = 1.f;
+    float    g_influence = 1.f;
+    float    g_power = 1.f;
+
+    float    b_agentNet = 1.f;
+    float    b_redChance = 1.f;
+    float    b_yellowChance = 1.f;
+    float    b_greenChance = 1.f;
+
+    float    doomsdayClockProgress = 1.f;
+
+    void operator+(const CardModifiers& other) noexcept
+    {
+        s_ideology += other.s_ideology;
+        s_finance += other.s_finance;
+        s_moral += other.s_moral;
+        s_influence += other.s_influence;
+
+        g_finance += other.g_finance;
+        g_moral += other.g_moral;
+        g_influence += other.g_influence;
+
+        b_agentNet += other.b_agentNet;
+        b_redChance += other.b_redChance;
+        b_yellowChance += other.b_yellowChance;
+        b_greenChance += other.b_greenChance;
+    }
+
+};
+struct CountryStates
+{
+    float    s_ideology = 0.25f;
+    float      s_finance = 0.15f;
+    float    s_moral = 0.75f;
+    float    s_influence = 0.20f;
+    float    s_power = 0.20f;
+
+    float      g_finance = 0.35;
+    float    g_moral = 0.40f;
+    float    g_influence = 0.20f;
+    float    g_power = 0.20f;
+
+    float    b_agentNet = 0.25f;
+    float    b_redChance = 0.25f;
+    float    b_yellowChance = 0.25f;
+    float    b_greenChance = 0.25f;
+
+    float doomsdayClockProgress = 0.f;
+
+    void applyOther(const CountryStates& other, const CardModifiers& modifiers = {})
+    {
+        s_ideology += other.s_ideology * modifiers.s_ideology;
+        s_finance += other.s_finance * modifiers.s_finance;
+        s_moral += other.s_moral * modifiers.s_moral;
+        s_influence += other.s_influence * modifiers.s_influence;
+        s_power += other.s_power * modifiers.s_power;
+
+        g_finance += other.g_finance * modifiers.g_finance;
+        g_moral += other.g_moral * modifiers.g_moral;
+        g_influence += other.g_influence * modifiers.g_influence;
+        g_power += other.g_power * modifiers.g_power;
+
+        b_agentNet += other.b_agentNet * modifiers.b_agentNet;
+        b_redChance += other.b_redChance * modifiers.b_redChance;
+        b_yellowChance += other.b_yellowChance * modifiers.b_yellowChance;
+        b_greenChance += other.b_greenChance * modifiers.b_greenChance;
+
+        doomsdayClockProgress += other.doomsdayClockProgress * modifiers.doomsdayClockProgress;
+    }
+};
+
+struct GameState
+{
+    //uint16_t interbellumDay = 0;
+    bool warStarted = false;
+    CountryStates countries;
+
+    Winner determineWinner() noexcept
+    {
+        const float POWER_THRESHOLD = 0.7f; //Порог силы
+        const float POWER_DIF = 10.f; //Разница силы СССР и Германии
+        const float IDEOLOGY_THRESHOLD = 1.f; //Порог идеологии для мировой пролетарской революции (победа СССР)
+
+        if (warStarted)
+        {
+            if (countries.s_power < POWER_THRESHOLD && countries.g_power < POWER_THRESHOLD)
+                return Winner::Britain;
+
+            if (abs(countries.s_power - countries.g_power) <= POWER_DIF)
+                return Winner::Britain;
+
+            if (countries.s_power < countries.g_power)
+                return Winner::Germany;
+            else
+                return Winner::USSR;
+        }
+        else if (countries.s_ideology >= IDEOLOGY_THRESHOLD)
+            return Winner::USSR;
+
+        //Победитель не определён в текущем ходе
+        return Winner::None;
+    }
+};
+
+
+static inline GameState gameState;
+
 sf::String systemToSfString(const std::string& str) {
     if (str.empty()) return sf::String();
 
@@ -126,85 +264,7 @@ private:
 //*
 
 //*/
-struct CardModifiers
-{
-    float    s_ideology = 1.f;
-    float    s_finance = 1.f;
-    float    s_moral = 1.f;
-    float    s_influence = 1.f;
-    float    s_power = 1.f;
 
-    float    g_finance = 1.f;
-    float    g_moral = 1.f;
-    float    g_influence = 1.f;
-    float    g_power = 1.f;
-
-    float    b_agentNet = 1.f;
-    float    b_redChance = 1.f;
-    float    b_yellowChance = 1.f;
-    float    b_greenChance = 1.f;
-
-    float    doomsdayClockProgress = 1.f;
-
-    void operator+(const CardModifiers& other) noexcept
-    {
-        s_ideology += other.s_ideology;
-        s_finance += other.s_finance;
-        s_moral += other.s_moral;
-        s_influence += other.s_influence;
-
-        g_finance += other.g_finance;
-        g_moral += other.g_moral;
-        g_influence += other.g_influence;
-
-        b_agentNet += other.b_agentNet;
-        b_redChance += other.b_redChance;
-        b_yellowChance += other.b_yellowChance;
-        b_greenChance += other.b_greenChance;
-    }
-
-};
-struct CountryStates
-{
-    float    s_ideology = 0.25f;
-    float      s_finance = 0.15f;
-    float    s_moral = 0.75f;
-    float    s_influence = 0.20f;
-    float    s_power = 0.20f;
-
-    float      g_finance = 0.35;
-    float    g_moral = 0.40f;
-    float    g_influence = 0.20f;
-    float    g_power = 0.20f;
-
-    float    b_agentNet = 0.25f;
-    float    b_redChance = 0.25f;
-    float    b_yellowChance = 0.25f;
-    float    b_greenChance = 0.25f;
-
-    float doomsdayClockProgress = 0.f;
-
-    void applyOther(const CountryStates& other, const CardModifiers& modifiers = {})
-    {
-        s_ideology += other.s_ideology * modifiers.s_ideology;
-        s_finance += other.s_finance * modifiers.s_finance;
-        s_moral += other.s_moral * modifiers.s_moral;
-        s_influence += other.s_influence * modifiers.s_influence;
-        s_power += other.s_power * modifiers.s_power;
-
-        g_finance += other.g_finance * modifiers.g_finance;
-        g_moral += other.g_moral * modifiers.g_moral;
-        g_influence += other.g_influence * modifiers.g_influence;
-        g_power += other.g_power * modifiers.g_power;
-
-        b_agentNet += other.b_agentNet * modifiers.b_agentNet;
-        b_redChance += other.b_redChance * modifiers.b_redChance;
-        b_yellowChance += other.b_yellowChance * modifiers.b_yellowChance;
-        b_greenChance += other.b_greenChance * modifiers.b_greenChance;
-
-        doomsdayClockProgress += other.doomsdayClockProgress * modifiers.doomsdayClockProgress;
-    }
-};
 class Card : public sf::Drawable
 {
 public:
@@ -220,16 +280,19 @@ public:
         cardSprite.setTextureRect(textureRect);
 
 
-    
+
         sf::Vector2f bounds = cardSprite.getGlobalBounds().size;
         cardSprite.setOrigin({ bounds.x / 2.f, bounds.y / 2.f });
 
         descMargin = bounds.x * 0.1f;
-        description.setBounds({ bounds.x - 2*descMargin, bounds.y / 2.f });
+        description.setBounds({ bounds.x - 2 * descMargin, bounds.y / 2.f });
         setScale({ 1.0f, 1.0f });
 
     }
-
+    bool containsPoint(sf::Vector2f point) noexcept
+    {
+        return cardSprite.getGlobalBounds().contains(point);
+    }
 
     void setRotation(float angle) noexcept
     {
@@ -266,10 +329,10 @@ public:
             cardSprite.setPosition(pos);
             description.setPosition(pos);
 
-         
+
             sf::Vector2f cardBounds = cardSprite.getLocalBounds().size;
 
-       
+
             sf::Vector2f descOrigin = { cardBounds.x / 2.f - descMargin, 0.f };
 
             description.setOrigin(descOrigin);
@@ -307,7 +370,7 @@ public:
         cardSprite.setRotation(sf::degrees(currentRotation));
         description.setRotation(currentRotation);
     }
-    
+
     void moveTo(sf::Vector2f position) noexcept
     {
         startPos = cardSprite.getPosition();
@@ -332,6 +395,7 @@ public:
     CountryStates deltastatesYesChoice;
     CountryStates deltastatesNoChoice;
     double flipProgress = 1.0;
+    sf::IntRect cardTextureRect;
 private:
     sf::Vector2f scale = { 1.f, 1.f };
     sf::Vector2f startPos;
@@ -348,7 +412,6 @@ private:
     sf::Sprite  cardSprite;
     TextBox     description;
     float descMargin;
-    sf::IntRect cardTextureRect;
 
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override
     {
@@ -361,12 +424,6 @@ private:
 
 
 
-struct GameState
-{
-    //uint16_t interbellumDay = 0;
-
-    CountryStates countries;
-};
 
 class VisualParameter : public sf::Drawable
 {
@@ -375,9 +432,11 @@ public:
         const sf::Vector2f& position,
         sf::IntRect textureRect,
         const sf::Color& fillColor,
-        const sf::Vector2f& fillPadding = { 0, 0 }) noexcept
-        : icon(paramsTexture), padding(fillPadding)
+        const sf::Vector2f& fillPadding, float& value) noexcept
+        : icon(paramsTexture), padding(fillPadding),
+        currentValue(value)
     {
+
         icon.setTextureRect(textureRect);
 
         sf::Vector2f iconSize = { static_cast<float>(textureRect.size.x),
@@ -386,6 +445,7 @@ public:
         setPosition(position);
         shape.setFillColor(fillColor);
         shape.setOutlineThickness(0);
+        oldValue = 0;
     }
 
     void setPosition(const sf::Vector2f& pos) noexcept
@@ -404,21 +464,22 @@ public:
 
     void setValue(float value) noexcept
     {
-        oldValue = currentValue;
-        newValue = std::clamp(value, 0.f, 1.f);
+    //    oldValue = currentValue;
+      //  newValue = std::clamp(value, 0.f, 1.f);
     }
 
     void update(double deltaTime) noexcept
-    {
+    {/*
         if (std::abs(oldValue - newValue) > 0.001f)
             oldValue += (newValue - oldValue) * static_cast<float>(deltaTime) * animSpeed;
         else
             oldValue = newValue;
-
+        
         if (std::abs(currentValue - newValue) > 0.5f)
             currentValue += (newValue - currentValue) * static_cast<float>(deltaTime) * animSpeed * 3.f;
         else
             currentValue = newValue;
+            */
     }
 
     void setRotation(float degrees) noexcept
@@ -428,11 +489,12 @@ public:
     }
     void InsertValue(float f)
     {
-        currentValue  = f;
-        oldValue = f;
-        newValue = f;
+        currentValue = std::clamp(f, 0.f, 1.f);
+        oldValue = currentValue;
+        newValue = currentValue;
     }
-    float currentValue = 0.f;
+    float& currentValue;
+    //float currentValue = 0.f;
     float oldValue = 0.f;
     float newValue = 0.f;
     bool shown = 1;
@@ -444,7 +506,7 @@ private:
     sf::Vector2f position = { 0, 0 };
     sf::Vector2f padding = { 0, 0 };
 
-  
+
 
     float animSpeed = 2.f;
 
@@ -481,6 +543,89 @@ private:
         target.draw(icon, states);
     }
 };
+class SpecialCardDeck : public sf::Drawable
+{
+public:
+    SpecialCardDeck(const sf::Texture& Texture,
+        const sf::Vector2f& position,
+        sf::IntRect textureRect,
+        const sf::Vector2f& fillPadding = { 0, 0 }) noexcept
+        : background(Texture), padding(fillPadding)
+    {
+        background.setTextureRect(textureRect);
+
+        sf::Vector2f backgroundSize = { static_cast<float>(textureRect.size.x),
+                                   static_cast<float>(textureRect.size.y) };
+        setPosition(position);
+    }
+
+    void setPosition(const sf::Vector2f& pos) noexcept
+    {
+        position = pos;
+        background.setPosition(pos);
+        //shape.setPosition({ pos.x, pos.y + size.y });
+    }
+
+    void setSize(const sf::Vector2f& size) noexcept
+    {
+        this->size = size;
+        background.setScale(size);
+       // shape.setSize(size - sf::Vector2f{ padding.x * 2, padding.y * 2 });
+       // shape.setOrigin({ size.x / 2, size.y });
+    }
+
+    bool containsPoint(sf::Vector2f point) noexcept
+    {
+        return background.getGlobalBounds().contains(point);
+    }
+
+    void update(double deltaTime, int x, int y) noexcept
+    {
+        //containsPoint({ (float)x,(float)y }) && 
+        bool hov = containsPoint({ (float)x,(float)y });
+        if (cards.size())
+        {
+            float sizebx = background.getTextureRect().size.x;
+            float sizecx = cards[0].cardTextureRect.size.x;
+            int i = 0;
+            for (Card& c : cards)
+            {
+                int curent = (int)((((float)(x - position.x)) / sizebx) * cards.size());
+                bool b = curent == i && hov;
+                bool cur = curent < i && hov;
+                c.moveTo({ (float)((windowWidth)-710 + (sizecx / 2) + (i * ((sizebx - sizecx) / (float)cards.size()))) + (cur ? 100.f : 0.f), (float)((windowHeight)-(410 / 2)) + (b ? -20.f : 0.f)});
+                i++;
+            }
+            
+        }
+        for (Card& c : cards)
+        {
+            c.update(deltaTime, 1);
+        }
+    }
+
+    bool shown = 1;
+    std::vector<Card> cards;
+private:
+    sf::Sprite background;
+
+    sf::Vector2f size = { 100, 100 };
+    sf::Vector2f position = { 0, 0 };
+    sf::Vector2f padding = { 0, 0 };
+    void AddCard()
+    {
+
+    }
+
+    void draw(sf::RenderTarget& target, sf::RenderStates states) const override
+    {
+        if (!shown)
+            return;
+        target.draw(background, states);
+        for(int i = 0; i < cards.size(); i++)
+            target.draw(cards[i], states);
+    }
+};
 
 
 class Damper : public sf::Drawable
@@ -505,6 +650,10 @@ public:
         damper.setPosition({ 0.f, -damper.getGlobalBounds().size.y });
     }
 
+    void lock() noexcept
+    {
+
+    }
     void update(double deltaTime) noexcept
     {
         switch (state)
@@ -522,7 +671,7 @@ public:
             break;
 
         case AnimationState::Closed:
-            if (clock.getElapsedTime().asSeconds() >= damperSeconds)
+            if (clock.getElapsedTime().asSeconds() >= damperSeconds && !locked)
                 state = AnimationState::Out;
             break;
 
@@ -541,6 +690,7 @@ public:
     uint8_t            currentPlayer = 0;
     const uint8_t      totalPlayers = 3;
 private:
+    bool locked = false;
     sf::RectangleShape damper;
     const float        damperSpeed;
     const float        damperSeconds;
@@ -555,19 +705,7 @@ private:
 };
 
 
-class Game
-{
-private:
-public:
-    Game() noexcept
-    {
 
-    }
-    void loadResources(const std::filesystem::path resourcesPath)
-    {
-
-    }
-};
 static std::mt19937 engine = std::mt19937(time(0));
 inline float Random(float min, float max)
 {
@@ -575,15 +713,419 @@ inline float Random(float min, float max)
     return dist(engine);
 };
 //enum class Country { SovietUnion, Germany, Britain};
+
+
+
+
+
+sf::Color brighten(const sf::Color& source, float factor) noexcept
+{
+    return sf::Color(std::min(255, static_cast<int>(source.r * factor)),
+        std::min(255, static_cast<int>(source.g * factor)),
+        std::min(255, static_cast<int>(source.b * factor)),
+        source.a);
+}
+class Button : public sf::Drawable
+{
+
+public:
+    explicit Button(const sf::Vector2f& pos, const sf::Vector2f& size, const sf::Color& fillColor, std::function<void()> callback) noexcept
+        : fillColor(fillColor), callback(callback)
+    {
+        shape.setPosition(pos);
+        shape.setSize(size);
+        shape.setOrigin({ shape.getLocalBounds().size.x / 2 , shape.getLocalBounds().size.y / 2 });
+
+        shape.setFillColor(fillColor);
+        shape.setOutlineThickness(2.f);
+
+    }
+
+    void hover() noexcept
+    {
+
+        shape.setFillColor(brighten(fillColor, 1.2f));
+
+        hovered = true;
+    }
+    void unhover() noexcept
+    {
+        shape.setFillColor(fillColor);
+        hovered = false;
+    }
+    bool containsPoint(sf::Vector2f point) noexcept
+    {
+        return shape.getGlobalBounds().contains(point);
+    }
+    void click() const noexcept
+    {
+        if (visibility && hovered)
+            callback();
+    }
+
+    void setVisible(bool visible) noexcept
+    {
+        visibility = visible;
+    }
+    bool isVisible() const noexcept
+    {
+        return visibility;
+    }
+private:
+    bool visibility = true;
+    bool hovered = false;
+    std::function<void()> callback;
+
+    sf::Color fillColor;
+    sf::RectangleShape shape;
+    void draw(sf::RenderTarget& target, sf::RenderStates states) const override
+    {
+        if (visibility)
+            target.draw(shape, states);
+    }
+};
+class PlayerInterface
+{
+public:
+    enum class State {left, rigth, center};
+    State state;
+};
+class SovietInterface : public sf::Drawable, public PlayerInterface
+{
+public:
+    VisualParameter moralParam;
+    VisualParameter influenceParam;
+    VisualParameter financeParam;
+    VisualParameter ideologyWin;
+    VisualParameter miliatarPower;
+    SpecialCardDeck specialCardDeckS;
+   
+    SovietInterface() : moralParam(paramsTex,
+            sf::Vector2f{ static_cast<float>(windowWidth / 2.f - 130 - 55), static_cast<float>(windowHeight - 120) },
+            sf::IntRect({ 0, 0 }, { 110, 110 }),
+            sf::Color::Green,
+            { 5.f, 5.f }, gameState.countries.s_moral), influenceParam(paramsTex,
+            sf::Vector2f{ (float)((windowWidth / 2.f) + 130 - 55), (float)(windowHeight - 120) },
+            sf::IntRect({ 220, 0 }, { 110, 110 }),
+            sf::Color::Blue,
+            { 5.f, 5.f }, gameState.countries.s_influence), financeParam(paramsTex,
+            sf::Vector2f{ (float)((windowWidth / 2.f) - 55), (float)(windowHeight - 120) },
+            sf::IntRect({ 110, 0 }, { 110, 110 }),
+            sf::Color::Yellow,
+            { 5.f, 5.f }, gameState.countries.s_finance), ideologyWin(uniqueParamsTex,
+            sf::Vector2f{ (float)(windowWidth / 2.f) - 600 - 55, (float)(windowHeight - 238) },
+            sf::IntRect({ 0, 0 }, { 218, 218 }),
+            sf::Color::Red,
+            { 5.f, 5.f }, gameState.countries.s_ideology),
+        miliatarPower(uniqueParamsTex,
+            sf::Vector2f{ (float)(windowWidth / 2.f) - 360 - 55, (float)(windowHeight - 238) },
+            sf::IntRect({ 218, 0 }, { 218, 218 }),
+            sf::Color::Red,
+            { 5.f, 5.f }, gameState.countries.s_power),
+        specialCardDeckS(SpecialBackgroundTex,
+            sf::Vector2f{ (float)((windowWidth)-710), (float)((windowHeight)-410) },
+            sf::IntRect({ 0, 0 }, { 700, 400 }),
+            { 5.f, 5.f })
+    {
+        moralParam.setValue(0.8f);
+        influenceParam.setValue(0.8f);
+        financeParam.InsertValue(0.8f);
+        ideologyWin.setValue(1.f);
+        for (int i = 0; i < 5; i++)
+        {
+            // 0 - soviet, 1 - german, 3 - brittish red, 4 - brittish yellow, 5 - brittish green
+            int type = 0;
+            specialCardDeckS.cards.push_back(Card(specialcardTex, cardFont, sf::IntRect({ 0, 0 }, { 374, 396 })));
+            specialCardDeckS.cards.back().cardType = type;
+            specialCardDeckS.cards.back().setScale({ 0.75f,  0.75f });
+            specialCardDeckS.cards.back().teleport(sf::Vector2f{ (float)((windowWidth)-(710 / 2)), (float)((windowHeight)-(410 / 2)) });
+        }
+    }
+    void SetCenter()
+    {
+        moralParam.setPosition(sf::Vector2f{ static_cast<float>(windowWidth / 2.f - 130 - 55), static_cast<float>(windowHeight - 120) });
+        influenceParam.setPosition(sf::Vector2f{ (float)((windowWidth / 2.f) + 130 - 55), (float)(windowHeight - 120) });
+        financeParam.setPosition(sf::Vector2f{ (float)((windowWidth / 2.f) - 55), (float)(windowHeight - 120) });
+        ideologyWin.setPosition(sf::Vector2f{ (float)(windowWidth / 2.f) - 600 - 55, (float)(windowHeight - 238) });
+        miliatarPower.setPosition(sf::Vector2f{ (float)(windowWidth / 2.f) - 360 - 55, (float)(windowHeight - 238) });
+        
+        moralParam.setRotation(0);
+        influenceParam.setRotation(0);
+        financeParam.setRotation(0);
+        ideologyWin.setRotation(0);
+        miliatarPower.setRotation(0);
+        state = State::center;
+    }
+    void SetRight()
+    {
+        moralParam.setPosition(sf::Vector2f{ static_cast<float>(150), static_cast<float>(350) });
+        influenceParam.setPosition(sf::Vector2f{ (float)(270), (float)(300) });
+        financeParam.setPosition(sf::Vector2f{ (float)(390), (float)(250) });
+        miliatarPower.setPosition(sf::Vector2f{ (float)(600), (float)(150) });
+
+        ideologyWin.setPosition(sf::Vector2f{ (float)(250), (float)(150) });
+
+        moralParam.setRotation(150);
+        influenceParam.setRotation(150);
+        financeParam.setRotation(150);
+        ideologyWin.setRotation(150);
+        miliatarPower.setRotation(150);
+        state = State::rigth;
+    }
+    void SetLeft()
+    {
+        moralParam.setPosition(sf::Vector2f{ static_cast<float>(windowWidth - 150), static_cast<float>(400) });
+        influenceParam.setPosition(sf::Vector2f{ (float)(windowWidth - 270), (float)(350) });
+        financeParam.setPosition(sf::Vector2f{ (float)(windowWidth - 390), (float)(300) });
+        miliatarPower.setPosition(sf::Vector2f{ (float)(windowWidth - 550), (float)(200) });
+
+        ideologyWin.setPosition(sf::Vector2f{ (float)(windowWidth - 250), (float)(200) });
+
+        moralParam.setRotation(-150);
+        influenceParam.setRotation(-150);
+        financeParam.setRotation(-150);
+        ideologyWin.setRotation(-150);
+        miliatarPower.setRotation(-150);
+        state = State::left;
+    }
+    void draw(sf::RenderTarget& target, sf::RenderStates states) const override
+    {
+        //*
+        target.draw(moralParam, states);
+        target.draw(influenceParam, states);
+        target.draw(financeParam, states);
+        target.draw(ideologyWin, states);
+        target.draw(miliatarPower, states);
+        if(state == State::center)
+        target.draw(specialCardDeckS, states);
+        //*/
+    }
+    void update(double deltatime)
+    {
+        //*
+        moralParam.update(deltatime);
+       influenceParam.update(deltatime);
+        financeParam.update(deltatime);
+        ideologyWin.update(deltatime);
+        miliatarPower.update(deltatime);
+        specialCardDeckS.update(deltatime, mousex, mousey);
+        //*/
+    }
+};
+class GermanInterface : public sf::Drawable, public PlayerInterface
+{
+public:
+    VisualParameter moralParam;
+    VisualParameter influenceParam;
+    VisualParameter financeParam;
+    VisualParameter miliatarPower;
+    SpecialCardDeck specialCardDeckG;
+    GermanInterface() : moralParam(paramsTex,
+        sf::Vector2f{ static_cast<float>(windowWidth / 2.f - 130 - 55), static_cast<float>(windowHeight - 120) },
+        sf::IntRect({ 0, 0 }, { 110, 110 }),
+        sf::Color::Green,
+        { 5.f, 5.f }, gameState.countries.g_moral), 
+        influenceParam(paramsTex,
+            sf::Vector2f{ (float)((windowWidth / 2.f) + 130 - 55), (float)(windowHeight - 120) },
+            sf::IntRect({ 220, 0 }, { 110, 110 }),
+            sf::Color::Blue,
+            { 5.f, 5.f }, gameState.countries.g_influence), 
+        financeParam(paramsTex,
+                sf::Vector2f{ (float)((windowWidth / 2.f) - 55), (float)(windowHeight - 120) },
+                sf::IntRect({ 110, 0 }, { 110, 110 }),
+                sf::Color::Yellow, { 5.f, 5.f }, gameState.countries.g_finance),
+        miliatarPower(uniqueParamsTex,
+            sf::Vector2f{ (float)(windowWidth / 2.f) - 360 - 55, (float)(windowHeight - 238) },
+            sf::IntRect({ 218, 0 }, { 218, 218 }),
+            sf::Color::Red,
+            { 5.f, 5.f }, gameState.countries.g_power),
+        specialCardDeckG(SpecialBackgroundTex,
+            sf::Vector2f{ (float)((windowWidth)-710), (float)((windowHeight)-410) },
+            sf::IntRect({ 0, 0 }, { 700, 400 }),
+            { 5.f, 5.f })
+    {
+        moralParam.setValue(0.8f);
+
+        influenceParam.setValue(0.8f);
+
+        financeParam.InsertValue(0.8f);
+
+        for (int i = 0; i < 5; i++)
+        {
+            int type = 1;
+            specialCardDeckG.cards.push_back(Card(specialcardTex, cardFont, sf::IntRect({ 0, 0 }, { 374, 396 })));
+            specialCardDeckG.cards.back().cardType = type;
+            specialCardDeckG.cards.back().setScale({ 0.75f,  0.75f });
+            specialCardDeckG.cards.back().teleport(sf::Vector2f{ (float)((windowWidth)-(710 / 2)), (float)((windowHeight)-(410 / 2)) });
+        }
+    }
+    void SetCenter()
+    {
+        moralParam.setPosition(sf::Vector2f{ static_cast<float>(windowWidth / 2.f - 130 - 55), static_cast<float>(windowHeight - 120) });
+        influenceParam.setPosition(sf::Vector2f{ (float)((windowWidth / 2.f) + 130 - 55), (float)(windowHeight - 120) });
+        financeParam.setPosition(sf::Vector2f{ (float)((windowWidth / 2.f) - 55), (float)(windowHeight - 120) });
+        miliatarPower.setPosition(sf::Vector2f{ (float)(windowWidth / 2.f) - 360 - 55, (float)(windowHeight - 238) });
+
+        moralParam.setRotation(0);
+        influenceParam.setRotation(0);
+        financeParam.setRotation(0);
+        miliatarPower.setRotation(0);
+        state = State::center;
+    }
+    void SetRight()
+    {
+        moralParam.setPosition(sf::Vector2f{ static_cast<float>(150), static_cast<float>(350) });
+        influenceParam.setPosition(sf::Vector2f{ (float)(270), (float)(300) });
+        financeParam.setPosition(sf::Vector2f{ (float)(390), (float)(250) });
+        miliatarPower.setPosition(sf::Vector2f{ (float)(600), (float)(150) });
+
+
+        moralParam.setRotation(150);
+        influenceParam.setRotation(150);
+        financeParam.setRotation(150);
+        miliatarPower.setRotation(150);
+        state = State::rigth;
+    }
+    void SetLeft()
+    {
+        moralParam.setPosition(sf::Vector2f{ static_cast<float>(windowWidth - 150), static_cast<float>(400) });
+        influenceParam.setPosition(sf::Vector2f{ (float)(windowWidth - 270), (float)(350) });
+        financeParam.setPosition(sf::Vector2f{ (float)(windowWidth - 390), (float)(300) });
+        miliatarPower.setPosition(sf::Vector2f{ (float)(windowWidth - 550), (float)(200) });
+
+
+        moralParam.setRotation(-150);
+        influenceParam.setRotation(-150);
+        financeParam.setRotation(-150);
+        miliatarPower.setRotation(-150);
+        state = State::left;
+    }
+    void draw(sf::RenderTarget& target, sf::RenderStates states) const override
+    {
+        target.draw(moralParam, states);
+        target.draw(influenceParam, states);
+        target.draw(financeParam, states);
+        target.draw(miliatarPower, states);
+        if (state == State::center)
+            target.draw(specialCardDeckG, states);
+    }
+
+    void update(double deltatime)
+    {
+        moralParam.update(deltatime);
+        influenceParam.update(deltatime);
+        financeParam.update(deltatime);
+        miliatarPower.update(deltatime);
+        specialCardDeckG.update(deltatime, mousex, mousey);
+    }
+};
+class BrittishInterface : public sf::Drawable, public PlayerInterface
+{
+public:
+    VisualParameter yellowChance;
+
+    VisualParameter redChance;
+
+    VisualParameter greenChance;
+    SpecialCardDeck specialCardDeckB;
+    Button buyYellowCard;
+
+    Button buyRedCard;
+
+    Button buyGreenCard;
+    BrittishInterface() : yellowChance(britainTex, { (float)(windowWidth / 2) - 500,(float)(windowHeight - 270) }, sf::IntRect{ {0,0}, {80,218} }, sf::Color::Yellow, { 0,0 }, gameState.countries.b_yellowChance),
+     redChance(britainTex, { (float)(windowWidth / 2) - 500 + 85,(float)(windowHeight - 270) }, sf::IntRect{ {80,0}, {80,218} }, sf::Color::Red, { 0,0 }, gameState.countries.b_redChance),
+        greenChance(britainTex, { (float)(windowWidth / 2) - 500 + 85 * 2,(float)(windowHeight - 270) }, sf::IntRect{ {160,0}, {80,218} }, sf::Color::Green, { 0,0 }, gameState.countries.b_greenChance),
+        specialCardDeckB(SpecialBackgroundTex,
+            sf::Vector2f{ (float)((windowWidth)-710), (float)((windowHeight)-410) },
+            sf::IntRect({ 0, 0 }, { 700, 400 }),
+            { 5.f, 5.f }),
+        buyYellowCard({ (float)(windowWidth / 2) - 460 + 320,(float)(windowHeight - 161) }, { 96,218 }, { 200,200,50 }, [&]() {
+            }),
+            buyRedCard({ (float)(windowWidth / 2) - 460 + 320 + 90,(float)(windowHeight - 161) }, { 96,218 }, { 200,50,50 }, [&]() {
+        gameState.countries.doomsdayClockProgress += 0.1f;
+                }),
+        buyGreenCard({ (float)(windowWidth / 2) - 460 + 320 + 90 * 2,(float)(windowHeight - 161) }, { 96,218 }, { 50,200,50 }, [&]() {
+            })
+    {
+        yellowChance.setValue(0.33f);
+        redChance.setValue(0.33f);
+        greenChance.setValue(0.33f);
+
+        for (int i = 0; i < 5; i++)
+        {
+            specialCardDeckB.cards.push_back(Card(specialcardTex, cardFont, sf::IntRect({ 0, 0 }, { 374, 396 })));
+            specialCardDeckB.cards.back().cardType = Random(2, 5);
+            specialCardDeckB.cards.back().setScale({ 0.75f,  0.75f });
+            specialCardDeckB.cards.back().teleport(sf::Vector2f{ (float)((windowWidth)-(710 / 2)), (float)((windowHeight)-(410 / 2)) });
+        }
+    }
+    void SetCenter()
+    {
+        yellowChance.setPosition(sf::Vector2f{ (float)(windowWidth / 2) - 500,(float)(windowHeight - 270) });
+        redChance.setPosition(sf::Vector2f{ (float)(windowWidth / 2) - 500 + 85,(float)(windowHeight - 270) });
+        greenChance.setPosition(sf::Vector2f{ (float)(windowWidth / 2) - 500 + 85 * 2,(float)(windowHeight - 270) });
+
+        yellowChance.setRotation(0);
+        redChance.setRotation(0);
+        greenChance.setRotation(0);
+        state = State::center;
+    }
+    void SetRight()
+    {
+        yellowChance.setPosition(sf::Vector2f{ static_cast<float>(150), static_cast<float>(250) });
+        redChance.setPosition(sf::Vector2f{ static_cast<float>(250), static_cast<float>(200) });
+        greenChance.setPosition(sf::Vector2f{ static_cast<float>(350), static_cast<float>(150) });
+
+        yellowChance.setRotation(150);
+        redChance.setRotation(150);
+        greenChance.setRotation(150);
+        state = State::rigth;
+    }
+    void SetLeft()
+    {
+        yellowChance.setPosition(sf::Vector2f{ static_cast<float>(windowWidth - 150), static_cast<float>(250) });
+        redChance.setPosition(sf::Vector2f{ static_cast<float>(windowWidth - 250), static_cast<float>(200) });
+        greenChance.setPosition(sf::Vector2f{ static_cast<float>(windowWidth - 350), static_cast<float>(150) });
+
+        yellowChance.setRotation(-150);
+        redChance.setRotation(-150);
+        greenChance.setRotation(-150);
+        state = State::left;
+    }
+    void draw(sf::RenderTarget& target, sf::RenderStates states) const override
+    {
+        target.draw(yellowChance, states);
+        target.draw(redChance, states);
+        target.draw(greenChance, states);
+        if (state == State::center)
+            target.draw(specialCardDeckB, states);
+    }
+
+    void update(double deltatime)
+    {
+        if (buyYellowCard.containsPoint({(float)mousex, (float)mousey})) buyYellowCard.hover();
+        else buyYellowCard.unhover();
+
+        if (buyRedCard.containsPoint({ (float)mousex, (float)mousey })) buyRedCard.hover();
+        else buyRedCard.unhover();
+
+        if (buyGreenCard.containsPoint({ (float)mousex, (float)mousey })) buyGreenCard.hover();
+        else buyGreenCard.unhover();
+        yellowChance.update(deltatime);
+        redChance.update(deltatime);
+        greenChance.update(deltatime);
+        specialCardDeckB.update(deltatime,mousex, mousey);
+    }
+};
 int main()
 {
-    setlocale(1,"ru");
+    setlocale(1, "ru");
     ShowWindow(GetConsoleWindow(), SW_HIDE);
     std::filesystem::current_path("..");
-    const sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
-    std::vector<sf::Drawable*> objects;
-    int windowWidth = 1600;
-    int windowHeight = 800;
+//    Static st;
+  //  int& windowWidth = st.windowWidth;
+  //  int& windowHeight = st.windowHeight;
     // Создание окна в полноэкранном режиме
     sf::RenderWindow window(sf::VideoMode({ (unsigned int)windowWidth, (unsigned int)windowHeight }),
         "Interbellum the game",
@@ -592,12 +1134,14 @@ int main()
     windowHeight = window.getSize().y;
     window.setFramerateLimit(60);
 
-    sf::Font cardFont;
-    sf::Texture backgroundTex, cardTex, paramsTex, uniqueParamsTex, damperTex, britainTex;
-    std::vector<sf::Texture> doomClockTexs;
+ //   sf::Font specialFont;
+
+ //   sf::Font cardFont;
+//    sf::Texture backgroundTex, cardTex, specialcardTex, paramsTex, uniqueParamsTex, damperTex, britainTex, SpecialBackgroundTex;
+ //   std::vector<sf::Texture> doomClockTexs;
     doomClockTexs.resize(12);
     std::vector<sf::Sprite> doomClockStates;
-   // doomClockStates.resize(12);
+    // doomClockStates.resize(12);
     try
     {
         for (int i = 0; i < 12; i++)
@@ -607,28 +1151,31 @@ int main()
                 return -1;
             }
             doomClockStates.emplace_back(sf::Sprite(doomClockTexs[i], sf::IntRect({ 0,0 }, { 165, 165 })));
-           // doomClockStates[i].setTexture(doomClockTexs[i]);
-            doomClockStates[i].setPosition({ (float)((windowWidth / 2.f) + 230), (float)(windowHeight - 170) });
+            // doomClockStates[i].setTexture(doomClockTexs[i]);
+            doomClockStates[i].setPosition({ (float)(30), (float)(windowHeight - 170) });
         }
-       // sf::Texture texture;
-        /*
-        // Загружаем изображение из файла
-        if (!texture.loadFromFile("image.png")) {
-            // Если файл не найден или поврежден, SFML выведет ошибку в консоль
-            return -1;
-        }
-        doomClockStates[0].
-            //*/
+        // sf::Texture texture;
+         /*
+         // Загружаем изображение из файла
+         if (!texture.loadFromFile("image.png")) {
+             // Если файл не найден или поврежден, SFML выведет ошибку в консоль
+             return -1;
+         }
+         doomClockStates[0].
+             //*/
         backgroundTex.loadFromFile("resources\\background1.jpg");
         cardTex.loadFromFile("resources\\cards.png");
+        specialcardTex.loadFromFile("resources\\SpecialCards.png");
         paramsTex.loadFromFile("resources\\common_params.png");
         uniqueParamsTex.loadFromFile("resources\\unique_params.png");
         damperTex.loadFromFile("resources\\damper.png");
 
 
         britainTex.loadFromFile("resources\\britain_params.png");
+        SpecialBackgroundTex.loadFromFile("resources\\SpecialBackground.png");
 
-        cardFont.openFromFile("resources\\Preciosa.ttf");
+        cardFont.openFromFile("resources\\Metamorphous.ttf");
+        specialFont.openFromFile("resources\\Share-Tech-CYR-Bold.otf");
     }
     catch (const std::exception& ex)
     {
@@ -641,83 +1188,10 @@ int main()
     backgroundTex.setRepeated(true);
     background.setTexture(&backgroundTex);
     objects.push_back(&background);
-    
-    
+
+    //Занавес для переключения игрока и завершения игры
     Damper damper(damperTex, windowWidth, windowHeight, windowHeight * 4.f, 0.3f);
-    //objects.push_back(&damper);
 
-    
-    
-
-
-
-    VisualParameter moralParam(paramsTex,
-        sf::Vector2f{ (float)((windowWidth / 2.f) - 130 - 55), (float)(windowHeight - 120) },
-        sf::IntRect({ 0, 0 }, { 110, 110 }),
-        sf::Color::Green,
-        { 5.f, 5.f });
-    moralParam.setValue(0.8f);
-    objects.push_back(&moralParam);
-
-    VisualParameter influenceParam(paramsTex,
-        sf::Vector2f{ (float)((windowWidth / 2.f) + 130 - 55), (float)(windowHeight - 120) },
-        sf::IntRect({ 220, 0 }, { 110, 110 }),
-        sf::Color::Blue,
-        { 5.f, 5.f });
-    influenceParam.setValue(0.8f);
-    objects.push_back(&influenceParam);
-
-    VisualParameter financeParam(paramsTex,
-        sf::Vector2f{ (float)((windowWidth / 2.f) - 55), (float)(windowHeight - 120) },
-        sf::IntRect({ 110, 0 }, { 110, 110 }),
-        sf::Color::Yellow,
-        { 5.f, 5.f });
-
-    financeParam.InsertValue(0.8f);
-    objects.push_back(&financeParam);
-
-
-
-    VisualParameter ideologyWin(uniqueParamsTex,
-        sf::Vector2f{ (float)(windowWidth / 2.f) - 600 - 55, (float)(windowHeight - 238) },
-        sf::IntRect({ 0, 0 }, { 218, 218 }),
-        sf::Color::Red,
-        { 5.f, 5.f });
-
-    objects.push_back(&ideologyWin);
-    ideologyWin.setValue(1.f);
-    VisualParameter miliatarWin(uniqueParamsTex,
-        sf::Vector2f{ (float)(windowWidth / 2.f) - 600 - 55, (float)(windowHeight - 238) },
-        sf::IntRect({ 218, 0 }, { 218, 218 }),
-        sf::Color::Red,
-        { 5.f, 5.f });
-    
-    objects.push_back(&miliatarWin);
-    miliatarWin.setValue(1.f);
-
-
-    VisualParameter miliatarPower(uniqueParamsTex,
-        sf::Vector2f{ (float)(windowWidth / 2.f) - 360 - 55, (float)(windowHeight - 238) },
-        sf::IntRect({ 218, 0 }, { 218, 218 }),
-        sf::Color::Red,
-        { 5.f, 5.f });
-
-    objects.push_back(&miliatarPower);
-
-
-
-
-
-
-    VisualParameter yellowChance(britainTex, { (float)(windowWidth / 2) - 500,(float)(windowHeight - 270) }, sf::IntRect{ {0,0}, {80,218} }, sf::Color::Blue, { 0,0 });
-    yellowChance.setValue(0.33f);
-
-
-   // yellowChance.setRotation(45);
-    objects.push_back(&yellowChance);
-    GameState gameState;
-
-    miliatarPower.setValue(gameState.countries.s_power);
 
     std::vector<Card> sovietcards;
     std::vector<Card> germancards;
@@ -731,62 +1205,54 @@ int main()
         for (const auto& card : data["common_cards"])
         {
             int type = card["type"];
-            if(type == 1)
+            if (type == 1)
                 sovietcards.push_back(Card(cardTex, cardFont, sf::IntRect({ 0, 0 }, { 450, 620 })));
-            if(type == 2)
+            if (type == 2)
                 germancards.push_back(Card(cardTex, cardFont, sf::IntRect({ 0, 0 }, { 450, 620 })));
-            if(type == 3)
+            if (type == 3)
                 brittishcards.push_back(Card(cardTex, cardFont, sf::IntRect({ 0, 0 }, { 450, 620 })));
             Card& cur = (type == 1 ? sovietcards.back() : (type == 2 ? germancards.back() : brittishcards.back()));
             std::string s = card["description"].get<std::string>();
             cur.setDescription(sf::String::fromUtf8(s.begin(), s.end()));
 
-            cur.cardType = ((card["type"] ) % 3);
-          //  cur.cardType = card["type"];
+            cur.cardType = ((card["type"]) % 3);
+            //  cur.cardType = card["type"];
 
-            // Доступ к эффектам при выборе "Да" (свайп вправо)
+              // Доступ к эффектам при выборе "Да" (свайп вправо)
 
-            cur.deltastatesYesChoice.s_moral =     (float)(card["effectsYes"]["s_moral"]) / 100.f;
-            cur.deltastatesYesChoice.s_ideology =  (float)(card["effectsYes"]["s_ideology"]) / 100.f;
+            cur.deltastatesYesChoice.s_moral = (float)(card["effectsYes"]["s_moral"]) / 100.f;
+            cur.deltastatesYesChoice.s_ideology = (float)(card["effectsYes"]["s_ideology"]) / 100.f;
             cur.deltastatesYesChoice.s_influence = (float)(card["effectsYes"]["s_influence"]) / 100.f;
-            cur.deltastatesYesChoice.s_finance =   (float)(card["effectsYes"]["s_finance"]) / 100.f;
-            cur.deltastatesYesChoice.s_power =   (float)(card["effectsYes"]["s_power"]) / 100.f;
-            cur.deltastatesYesChoice.g_finance =   (float)(card["effectsYes"]["g_finance"]) / 100.f;
+            cur.deltastatesYesChoice.s_finance = (float)(card["effectsYes"]["s_finance"]) / 100.f;
+            cur.deltastatesYesChoice.s_power = (float)(card["effectsYes"]["s_power"]) / 100.f;
+            cur.deltastatesYesChoice.g_finance = (float)(card["effectsYes"]["g_finance"]) / 100.f;
             cur.deltastatesYesChoice.g_influence = (float)(card["effectsYes"]["g_influence"]) / 100.f;
-            cur.deltastatesYesChoice.g_moral =     (float)(card["effectsYes"]["g_moral"]) / 100.f;
-            cur.deltastatesYesChoice.g_power =     (float)(card["effectsYes"]["g_power"]) / 100.f;
-            cur.deltastatesYesChoice.b_agentNet =  (float)(card["effectsYes"]["g_moral"]) / 100.f;
+            cur.deltastatesYesChoice.g_moral = (float)(card["effectsYes"]["g_moral"]) / 100.f;
+            cur.deltastatesYesChoice.g_power = (float)(card["effectsYes"]["g_power"]) / 100.f;
+            cur.deltastatesYesChoice.b_agentNet = (float)(card["effectsYes"]["g_moral"]) / 100.f;
             cur.deltastatesYesChoice.b_greenChance = (float)(card["effectsYes"]["g_moral"]) / 100.f;
             cur.deltastatesYesChoice.b_redChance = (float)(card["effectsYes"]["g_moral"]) / 100.f;
             cur.deltastatesYesChoice.b_yellowChance = (float)(card["effectsYes"]["g_moral"]) / 100.f;
 
             cur.deltastatesYesChoice.doomsdayClockProgress = (float)(card["effectsYes"]["doomsdayWatch"]) / 100.f;
-                                                            
-            cur.deltastatesNoChoice.s_moral =      (float)(card["effectsNo"]["s_moral"]) / 100.f;
-            cur.deltastatesNoChoice.s_ideology =   (float)(card["effectsNo"]["s_ideology"]) / 100.f;
-            cur.deltastatesNoChoice.s_influence =  (float)(card["effectsNo"]["s_influence"]) / 100.f;
-            cur.deltastatesNoChoice.s_finance =    (float)(card["effectsNo"]["s_finance"]) / 100.f;
-            cur.deltastatesNoChoice.s_power =    (float)(card["effectsNo"]["s_power"]) / 100.f;
-            cur.deltastatesNoChoice.g_finance =    (float)(card["effectsNo"]["g_finance"]) / 100.f;
-            cur.deltastatesNoChoice.g_influence =  (float)(card["effectsNo"]["g_influence"]) / 100.f;
-            cur.deltastatesNoChoice.g_moral =      (float)(card["effectsNo"]["g_moral"]) / 100.f;
-            cur.deltastatesNoChoice.g_power =      (float)(card["effectsNo"]["g_power"]) / 100.f;
-            cur.deltastatesNoChoice.b_agentNet =   (float)(card["effectsNo"]["g_moral"]) / 100.f;
+
+            cur.deltastatesNoChoice.s_moral = (float)(card["effectsNo"]["s_moral"]) / 100.f;
+            cur.deltastatesNoChoice.s_ideology = (float)(card["effectsNo"]["s_ideology"]) / 100.f;
+            cur.deltastatesNoChoice.s_influence = (float)(card["effectsNo"]["s_influence"]) / 100.f;
+            cur.deltastatesNoChoice.s_finance = (float)(card["effectsNo"]["s_finance"]) / 100.f;
+            cur.deltastatesNoChoice.s_power = (float)(card["effectsNo"]["s_power"]) / 100.f;
+            cur.deltastatesNoChoice.g_finance = (float)(card["effectsNo"]["g_finance"]) / 100.f;
+            cur.deltastatesNoChoice.g_influence = (float)(card["effectsNo"]["g_influence"]) / 100.f;
+            cur.deltastatesNoChoice.g_moral = (float)(card["effectsNo"]["g_moral"]) / 100.f;
+            cur.deltastatesNoChoice.g_power = (float)(card["effectsNo"]["g_power"]) / 100.f;
+            cur.deltastatesNoChoice.b_agentNet = (float)(card["effectsNo"]["g_moral"]) / 100.f;
             cur.deltastatesNoChoice.b_greenChance = (float)(card["effectsNo"]["g_moral"]) / 100.f;
-            cur.deltastatesNoChoice.b_redChance =  (float)(card["effectsNo"]["g_moral"]) / 100.f;
-            cur.deltastatesNoChoice.b_yellowChance = (float)(card["effectsNo"]["g_moral"])/100.f;
+            cur.deltastatesNoChoice.b_redChance = (float)(card["effectsNo"]["g_moral"]) / 100.f;
+            cur.deltastatesNoChoice.b_yellowChance = (float)(card["effectsNo"]["g_moral"]) / 100.f;
 
             cur.deltastatesNoChoice.doomsdayClockProgress = (float)(card["effectsYes"]["doomsdayWatch"]) / 100.f;
 
-           // float doomsdayYes = card["effectsYes"]["doomsdayWatch"];
-
-            // Доступ к эффектам при выборе "Нет" (свайп влево)
-           // int sovietMoralNo = card["effectsNo"]["s_moral"];
-
         }
-      //  std::cout << cards.dump() << "\n";
-
-       // std::cout << cards["common_cards"][0]["effects"]["moral"] << std::endl;
 
     }
     catch (const nlohmann::json::exception& ex)
@@ -796,14 +1262,6 @@ int main()
     }
 
 
-/*
-    for (int i = 0; i < 10; i++)
-    {
-        cards.push_back(Card(cardTex, cardFont, sf::IntRect({ 0, 0 }, { 450, 620 })));
-        cards.back().setDescription(L"Индустриализация!Строим заводыыыыы и делаем трактораааааа, нужно больше зерна от крестьяяяяяяян");
-    }
-    */
- //   cards.back().setDescription(L"Индустриализация! Строим заводыыыыы и делаем трактораааааа, нужно больше зерна от крестьяяяяяяян");
     CardModifiers currentIvent;
     Card* current = &sovietcards[0];
 
@@ -813,28 +1271,45 @@ int main()
 
     current->moveTo({ (float)(windowWidth / 2), (float)(windowHeight / 2) });
     bool cardSwiped = 0;
-    
-    moralParam.shown = 1;
-    financeParam.shown = 1;
-    influenceParam.shown = 1;
-    moralParam.InsertValue(gameState.countries.s_moral);
-    financeParam.InsertValue(gameState.countries.s_finance);
-    influenceParam.InsertValue(gameState.countries.s_influence);
-    ideologyWin.shown = 1;
-    miliatarWin.shown = 0;
-    yellowChance.shown = 0;
-    
+
+
     TextBox movedescription{ cardFont, 32 };
+
     movedescription.setPosition({ (float)(windowWidth / 2) - 880, (float)(windowHeight / 2) });
+
     
-    
-    ideologyWin.InsertValue(gameState.countries.s_ideology);
-    miliatarWin.InsertValue(gameState.countries.doomsdayClockProgress);
-    yellowChance.InsertValue(gameState.countries.b_yellowChance);
-    miliatarPower.InsertValue(gameState.countries.s_power);
+/*
+    objects.push_back(&buyYellowCard);
+    objects.push_back(&buyRedCard);
+    objects.push_back(&buyGreenCard);
+
+    buyYellowCard.setVisible(false);
+    buyRedCard.setVisible(false);
+    buyGreenCard.setVisible(false);
+    */
+    sf::Text winnerMessage(specialFont, "", 144);
+    winnerMessage.setOutlineColor(sf::Color::Black);
+    winnerMessage.setOutlineThickness(6.f);
+    winnerMessage.setFillColor({ 255,240,180 });
+    winnerMessage.setScale({ 1.5f, 1.5f });
+
+    Winner winner = Winner::None;
+    winnerMessage.setPosition({ static_cast<float>(windowWidth / 2), static_cast<float>(windowHeight / 3 * 2) });
+
+    SovietInterface sovi;
+    GermanInterface gmi;
+    BrittishInterface bmi;
+
+    sovi.SetCenter();
+    gmi.SetLeft();
+    bmi.SetRight();
+
+    window.setVerticalSyncEnabled(true);
     while (window.isOpen())
     {
         float deltaTime = clock.restart().asSeconds();
+
+        sf::Vector2f cursorPos = static_cast<sf::Vector2f>(sf::Mouse::getPosition(window));
 
         while (auto eventOpt = window.pollEvent())
         {
@@ -847,48 +1322,55 @@ int main()
             {
                 sf::Vector2i mousePos = { mouseEvent->position.x, mouseEvent->position.y };
 
-                if (mouseEvent->button == sf::Mouse::Button::Left)
+                if (mouseEvent->button == sf::Mouse::Button::Right)
                 {
-                    if(current->opened)
-                    if (mouseEvent->position.x > windowWidth / 2)
-                    {
-                        current->moveTo({ (float)3000, (float)(windowHeight/2) });
-                        current->swap();
-                        gameState.countries.applyOther(current->deltastatesYesChoice, currentIvent);
-                        cardSwiped = 1;
-                        damper.swap();
-                    }
+                    if (current->opened)
+                        if (mouseEvent->position.x > windowWidth / 2)
+                        {
+                            current->moveTo({ (float)3000, (float)(windowHeight / 2) });
+                            current->swap();
+                            gameState.countries.applyOther(current->deltastatesYesChoice, currentIvent);
+                            cardSwiped = 1;
+                            damper.swap();
+                        }
+                        else
+                        {
+                            current->moveTo({ (float)-3000, (float)(windowHeight / 2) });
+                            current->swap();
+                            gameState.countries.applyOther(current->deltastatesNoChoice, currentIvent);
+                            cardSwiped = 1;
+                            damper.swap();
+                        }
                     else
-                    {
-                        current->moveTo({ (float)-3000, (float)(windowHeight / 2) });
                         current->swap();
-                        gameState.countries.applyOther(current->deltastatesNoChoice, currentIvent);
-                        cardSwiped = 1;
-                        damper.swap();
-                    }
-                }
-                else if (mouseEvent->button == sf::Mouse::Button::Right)
-                {
-                    if(!current->opened)
-                        current->swap();
-                    
+
+                   bmi.buyYellowCard.click();
+                   bmi.buyRedCard.click();
+                   bmi.buyGreenCard.click();
                 }
             }
             if (auto* mouseEvent = event.getIf<sf::Event::MouseMoved>())
             {
+                mousex = mouseEvent->position.x;
+                mousey = mouseEvent->position.y;
+                /*/
                 if (mouseEvent->position.x > windowWidth / 2)
                     current->setRotation(10.f);
                 else
                     current->setRotation(-10.f);
+                //*/
             }
             else if (auto* keyEvent = event.getIf<sf::Event::KeyReleased>())
             {
-                if (keyEvent->code == sf::Keyboard::Key::Space) damper.swap();
-              //  else if (keyEvent->code == sf::Keyboard::Key::E) current->setRotation(10.f);
-              //  else if (keyEvent->code == sf::Keyboard::Key::Q) current->setRotation(-10.f);
-                else if (keyEvent->code == sf::Keyboard::Key::Escape) window.close();
+                if (keyEvent->code == sf::Keyboard::Key::Escape) window.close();
             }
+            if (gameState.countries.doomsdayClockProgress >= 1.f)
+                gameState.warStarted = true;
         }
+        if (mousex > windowWidth / 2)
+            current->setRotation(10.f);
+        else
+            current->setRotation(-10.f);
         if (cardSwiped)
         {
             if (damper.state == Damper::AnimationState::Idle)
@@ -897,47 +1379,27 @@ int main()
                 current->teleport({ 0, 0 });
                 if (damper.currentPlayer == 0)
                 {
-                    moralParam.shown = 1;
-                    financeParam.shown = 1;
-                    influenceParam.shown = 1;
-                    miliatarPower.shown = 1;
-                    moralParam.InsertValue(gameState.countries.s_moral);
-                    financeParam.InsertValue(gameState.countries.s_finance);
-                    influenceParam.InsertValue(gameState.countries.s_influence);
-                    ideologyWin.InsertValue(gameState.countries.s_ideology);
-                    miliatarPower.InsertValue(gameState.countries.s_power);
-                    ideologyWin.shown = 1;
-                    miliatarWin.shown = 0;
-                    yellowChance.shown = 0;
+                    sovi.SetCenter();
+                    gmi.SetLeft();
+                    bmi.SetRight();
                     current = &sovietcards[(int)Random(0, sovietcards.size())];
+
                 }
-                if (damper.currentPlayer == 1)
+                else if (damper.currentPlayer == 1)
                 {
-                    moralParam.shown = 1;
-                    financeParam.shown = 1;
-                    influenceParam.shown = 1;
-                    miliatarPower.shown = 1;
-                    moralParam.InsertValue(gameState.countries.g_moral);
-                    financeParam.InsertValue(gameState.countries.g_finance);
-                    influenceParam.InsertValue(gameState.countries.g_influence);
-                    miliatarWin.InsertValue(gameState.countries.doomsdayClockProgress);
-                    miliatarPower.InsertValue(gameState.countries.g_power);
-                    ideologyWin.shown = 0;
-                 //   miliatarWin.shown = 1;
-                    yellowChance.shown = 0;
+                    sovi.SetRight();
+                    gmi.SetCenter();
+                    bmi.SetLeft();
                     current = &germancards[(int)Random(0, germancards.size())];
+
                 }
                 if (damper.currentPlayer == 2)
                 {
-                    moralParam.shown = 0;
-                    financeParam.shown = 0;
-                    influenceParam.shown = 0;
-                    ideologyWin.shown = 0;
-                    miliatarWin.shown = 0;
-                    yellowChance.shown = 1;
-                    miliatarPower.shown = 0;
-                    yellowChance.InsertValue(gameState.countries.b_yellowChance);
+                    sovi.SetLeft();
+                    gmi.SetRight();
+                    bmi.SetCenter();
                     current = &brittishcards[(int)Random(0, brittishcards.size())];
+
                 }
 
                 current->moveTo({ (float)(windowWidth / 2), (float)(windowHeight / 2) });
@@ -947,18 +1409,28 @@ int main()
 
             }
         }
-       // current->update(deltaTime, 4.f);
+
         damper.update(deltaTime);
-        moralParam.update(deltaTime);
-        influenceParam.update(deltaTime);
+        switch (damper.currentPlayer)
+        {
+        case 0: { sovi.update(deltaTime); break; }
+        case 1: { gmi.update(deltaTime); break; }
+        case 2: { bmi.update(deltaTime); break; }
+        }
+     /*   moralParam.update(deltaTime);
+        SovietInterface::influenceParam.update(deltaTime);
         financeParam.update(deltaTime);
+       
+     //  specialCardDeck.update(deltaTime, cursorPos.x, cursorPos.y);
 
         yellowChance.update(deltaTime);
+        redChance.update(deltaTime);
+        greenChance.update(deltaTime);*/
 
         window.clear();
         for (sf::Drawable* dr : objects)
             window.draw(*dr);
-
+/*
         movedescription.setPosition({ (float)(windowWidth / 2) - 880, (float)(windowHeight / 2) - 200 });
         std::string s = "Отклонить\nЭффекты хода:\nСоветский союз:\n";
         s += "Идеология: " + std::to_string((int)(current->deltastatesNoChoice.s_ideology * 100)) + "\n";
@@ -969,7 +1441,7 @@ int main()
         s += "Военная мощь: " + std::to_string((int)(current->deltastatesNoChoice.g_power * 100)) + "\n";
         s += "Финансы: " + std::to_string((int)(current->deltastatesNoChoice.g_finance * 100)) + "\n";
         s += "Влияние: " + std::to_string((int)(current->deltastatesNoChoice.g_influence * 100)) + "\n";
-    //    s += "Влияние: " + std::to_string(current->deltastatesNoChoice.) + "\n";
+        //    s += "Влияние: " + std::to_string(current->deltastatesNoChoice.) + "\n";
         s += "Боевой дух: " + std::to_string((int)(current->deltastatesNoChoice.g_moral * 100)) + "\n";
         s += "Начало войны: " + std::to_string((int)(current->deltastatesNoChoice.doomsdayClockProgress * 100)) + "\nБритания:\n";
 
@@ -991,14 +1463,61 @@ int main()
         s += "Начало войны: " + std::to_string((int)(current->deltastatesNoChoice.doomsdayClockProgress * 100)) + "\nБритания:\n";
 
         movedescription.setText(sf::String(systemToSfString(s)));
-
+        
         window.draw(movedescription);
+        */
         current->update(deltaTime, 4.f);
- 
-        window.draw(doomClockStates[(int)(gameState.countries.doomsdayClockProgress * 12)]);
+
+        {
+            int doomsdayclockSprite = static_cast<int>(gameState.countries.doomsdayClockProgress * 12);
+            doomsdayclockSprite = std::clamp(doomsdayclockSprite, 0, 11);
+            window.draw(doomClockStates[doomsdayclockSprite]);
+        }
+        /*
+        switch (damper.currentPlayer)
+        {
+        case 0: { window.draw(specialCardDeckS); break; }
+        case 1: { window.draw(specialCardDeckG); break; }
+        case 2: { window.draw(specialCardDeckB); break; }
+        }*/
+        window.draw(bmi);
+        window.draw(sovi);
+        window.draw(gmi);
 
         window.draw(*current);
+
+
         window.draw(damper);
+
+
+        winner = gameState.determineWinner();
+        switch (winner)
+        {
+        case Winner::USSR:
+        {
+            winnerMessage.setString(U"Все буржуи побиты");
+
+        } break;
+        case Winner::Germany:
+        {
+            winnerMessage.setString(U"Мир услышал ехидное немецкое АХХАХАХАХАХАХ");
+        } break;
+        case Winner::Britain:
+        {
+            winnerMessage.setString(U"Бриташки победили");
+        } break;
+        }
+        winnerMessage.setOrigin({ winnerMessage.getLocalBounds().size.x / 2, winnerMessage.getLocalBounds().size.y / 2 });
+
+        if (winner != Winner::None)
+        {
+            damper.lock();
+            damper.state = Damper::AnimationState::In;
+            window.draw(winnerMessage);
+        }
+
+
+
         window.display();
     }
 
