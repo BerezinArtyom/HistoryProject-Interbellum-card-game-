@@ -490,6 +490,11 @@ public:
 
     void update(double deltaTime) noexcept
     {
+        constexpr float delta = 30.f;
+        oldValue += (currentValue - oldValue) / delta;
+        if (abs((currentValue - oldValue)) < 1 / delta)
+            oldValue = currentValue;
+        /*
         if (std::abs(oldValue - newValue) > 0.001f)
             oldValue += (newValue - oldValue) * static_cast<float>(deltaTime) * animSpeed;
         else
@@ -499,6 +504,7 @@ public:
             currentValue += (newValue - currentValue) * static_cast<float>(deltaTime) * animSpeed * 3.f;
         else
             currentValue = newValue;
+            */
     }
     void setRotation(float degrees) noexcept
     {
@@ -522,7 +528,7 @@ public:
         */
     }
     float& currentValue;
-    float& oldValue = currentValue;
+    float oldValue = 0;
     float& newValue = currentValue;
     sf::Vector2f scale = { 1.f, 1.f };
    // float oldValue = 0.f;
@@ -577,12 +583,19 @@ public:
             };
 
         if (oldValue > currentValue)
-        {
+        { 
+            if (oldValue != currentValue)
+            {
+                int e = 0;
+                e++;
+            }
             drawSized(oldValue, sf::Color::White);
             drawSized(currentValue, color);
+           
         }
         else
         {
+            
             sf::Color trns = color;
             trns.a = 128;
             drawSized(currentValue, trns);
@@ -989,10 +1002,11 @@ public:
     {
         //*
         moralParam.update(deltatime);
-       influenceParam.update(deltatime);
+        influenceParam.update(deltatime);
         financeParam.update(deltatime);
         ideologyWin.update(deltatime);
         miliatarPower.update(deltatime);
+        if(state == State::center)
         specialCardDeckS.update(deltatime, mousex, mousey);
         //*/
     }
@@ -1096,6 +1110,7 @@ public:
         influenceParam.update(deltatime);
         financeParam.update(deltatime);
         miliatarPower.update(deltatime);
+        if (state == State::center)
         specialCardDeckG.update(deltatime, mousex, mousey);
     }
 };
@@ -1200,6 +1215,7 @@ public:
         yellowChance.update(deltatime);
         redChance.update(deltatime);
         greenChance.update(deltatime);
+        if (state == State::center)
         specialCardDeckB.update(deltatime,mousex, mousey);
     }
 };
@@ -1355,11 +1371,9 @@ int main()
 
 
     current->moveTo({ (float)(windowWidth / 2), (float)(windowHeight / 2) });
-    bool cardSwiped = 0;
-
+    bool cardSwiped = 0, nextMove = 0;
 
     TextBox movedescription{ cardFont, 32 };
-
     movedescription.setPosition({ (float)(windowWidth / 2) - 880, (float)(windowHeight / 2) });
 
     
@@ -1372,6 +1386,7 @@ int main()
     buyRedCard.setVisible(false);
     buyGreenCard.setVisible(false);
     */
+    //*
     sf::Text winnerMessage(specialFont, "", 144);
     winnerMessage.setOutlineColor(sf::Color::Black);
     winnerMessage.setOutlineThickness(6.f);
@@ -1380,7 +1395,7 @@ int main()
 
     Winner winner = Winner::None;
     winnerMessage.setPosition({ static_cast<float>(windowWidth / 2), static_cast<float>(windowHeight / 3 * 2) });
-
+    //*/
     SovietInterface sovi;
     GermanInterface gmi;
     BrittishInterface bmi;
@@ -1389,6 +1404,8 @@ int main()
     gmi.SetLeft();
     bmi.SetRight();
 
+    Button skipMove({ (float)(40),(float)(windowHeight/2) }, { 60,60 }, { 100,100,100 }, [&]() {});
+    objects.push_back(&skipMove);
     window.setVerticalSyncEnabled(true);
     while (window.isOpen())
     {
@@ -1410,22 +1427,27 @@ int main()
                 if (mouseEvent->button == sf::Mouse::Button::Right)
                 {
                     if (current->opened)
-                        if (mouseEvent->position.x > windowWidth / 2)
+                    {
+                        if (!cardSwiped)
                         {
-                            current->moveTo({ (float)3000, (float)(windowHeight / 2) });
-                            current->swap();
-                            gameState.countries.applyOther(current->deltastatesYesChoice, currentIvent);
-                            cardSwiped = 1;
-                            damper.swap();
+                            if (mouseEvent->position.x > windowWidth / 2)
+                            {
+                                current->moveTo({ (float)3000, (float)(windowHeight / 2) });
+                                current->swap();
+                                gameState.countries.applyOther(current->deltastatesYesChoice, currentIvent);
+                                cardSwiped = 1;
+                                //  damper.swap();
+                            }
+                            else
+                            {
+                                current->moveTo({ (float)-3000, (float)(windowHeight / 2) });
+                                current->swap();
+                                gameState.countries.applyOther(current->deltastatesNoChoice, currentIvent);
+                                cardSwiped = 1;
+                                //  damper.swap();
+                            }
                         }
-                        else
-                        {
-                            current->moveTo({ (float)-3000, (float)(windowHeight / 2) });
-                            current->swap();
-                            gameState.countries.applyOther(current->deltastatesNoChoice, currentIvent);
-                            cardSwiped = 1;
-                            damper.swap();
-                        }
+                    }
                     else
                         current->swap();
 
@@ -1433,6 +1455,8 @@ int main()
                    bmi.buyRedCard.click();
                    bmi.buyGreenCard.click();
                 }
+                if (cardSwiped && skipMove.containsPoint({ (float)mousex,(float)mousey }))
+                    damper.swap();
             }
             if (auto* mouseEvent = event.getIf<sf::Event::MouseMoved>())
             {
@@ -1519,25 +1543,20 @@ int main()
                 }
 
                 current->moveTo({ (float)(windowWidth / 2), (float)(windowHeight / 2) });
-
-
-
-
             }
         }
 
         damper.update(deltaTime);
-        switch (damper.currentPlayer)
-        {
-        case 0: { sovi.update(deltaTime); break; }
-        case 1: { gmi.update(deltaTime); break; }
-        case 2: { bmi.update(deltaTime); break; }
-        }
-     /*   moralParam.update(deltaTime);
+        sovi.update(deltaTime);
+        gmi.update(deltaTime);
+        bmi.update(deltaTime);
+        if (skipMove.containsPoint({ (float)mousex, (float)mousey })) skipMove.hover();
+        else skipMove.unhover();
+        /*moralParam.update(deltaTime);
         SovietInterface::influenceParam.update(deltaTime);
         financeParam.update(deltaTime);
        
-     //  specialCardDeck.update(deltaTime, cursorPos.x, cursorPos.y);
+        //specialCardDeck.update(deltaTime, cursorPos.x, cursorPos.y);
 
         yellowChance.update(deltaTime);
         redChance.update(deltaTime);
@@ -1606,7 +1625,7 @@ int main()
 
         window.draw(damper);
 
-
+        //*
         winner = gameState.determineWinner();
         switch (winner)
         {
@@ -1632,7 +1651,7 @@ int main()
           //  damper.state = Damper::AnimationState::In;
             window.draw(winnerMessage);
         }
-
+        //*/
 
 
         window.display();
