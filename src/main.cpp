@@ -119,7 +119,11 @@ struct CountryStates
         if (b_redChance > 1) b_redChance = 1; if (b_redChance < 0) b_redChance = 0; 
         if (b_yellowChance > 1) b_yellowChance = 1; if (b_yellowChance < 0) b_yellowChance = 0; 
         if (b_greenChance > 1) b_greenChance = 1; if (b_greenChance < 0) b_greenChance = 0; 
-        doomsdayClockProgress += other.doomsdayClockProgress * modifiers.doomsdayClockProgress;
+
+        // 17 лет
+        float period = 17.f;
+        doomsdayClockProgress += 1 / period;
+       // doomsdayClockProgress += other.doomsdayClockProgress * modifiers.doomsdayClockProgress;
     }
 };
 
